@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 4: ReorderableListView | Flutter Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-code: #0d1117;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --accent-cyan: #06b6d4;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+            --code-comment: #8b949e;
+            --code-keyword: #ff7b72;
+            --code-string: #a5d6ff;
+            --code-function: #d2a8ff;
+            --code-class: #7ee787;
+            --code-number: #79c0ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans Thai', 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+        }
+
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-brand svg { color: var(--accent-cyan); }
+        .nav-brand span { font-family: 'Outfit', sans-serif; font-weight: 600; }
+
+        .nav-links { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(0, 212, 255, 0.2));
+            color: var(--accent-cyan);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .part-header { margin-bottom: 3rem; }
+
+        .part-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(6, 182, 212, 0.05));
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .part-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .part-description { color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; }
+
+        .objectives {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .objectives h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .objectives ul { list-style: none; }
+
+        .objectives li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .objectives li::before {
+            content: "○";
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .section { margin-bottom: 4rem; }
+
+        .section h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h2 .icon { color: var(--accent-cyan); }
+
+        .section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent-cyan);
+        }
+
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        p strong { color: var(--text-primary); }
+
+        .code-block {
+            position: relative;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-file {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .code-file svg { color: var(--accent-cyan); }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        .copy-btn.copied {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .code-content {
+            padding: 1.25rem;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #e6edf3;
+        }
+
+        .code-content .keyword { color: var(--code-keyword); }
+        .code-content .string { color: var(--code-string); }
+        .code-content .function { color: var(--code-function); }
+        .code-content .class { color: var(--code-class); }
+        .code-content .comment { color: var(--code-comment); font-style: italic; }
+        .code-content .number { color: var(--code-number); }
+        .code-content .annotation { color: var(--accent-orange); }
+
+        .info-box {
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border: 1px solid;
+        }
+
+        .info-box.tip {
+            background: rgba(34, 197, 94, 0.05);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .info-box.tip .info-title { color: var(--accent-green); }
+
+        .info-box.warning {
+            background: rgba(234, 179, 8, 0.05);
+            border-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .info-box.warning .info-title { color: var(--accent-yellow); }
+
+        .info-box.danger {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .info-box.danger .info-title { color: var(--accent-red); }
+
+        .info-box.note {
+            background: rgba(6, 182, 212, 0.05);
+            border-color: rgba(6, 182, 212, 0.2);
+        }
+
+        .info-box.note .info-title { color: var(--accent-cyan); }
+
+        .info-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-content { color: var(--text-secondary); }
+
+        .diagram-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        .comparison-table td { color: var(--text-secondary); }
+        .comparison-table tr:last-child td { border-bottom: none; }
+
+        .step-list { margin: 1.5rem 0; }
+
+        .step-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover { border-color: var(--accent-cyan); }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p { margin-bottom: 0; font-size: 0.95rem; }
+
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.prev {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .nav-btn.prev:hover {
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateX(4px);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-code);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--accent-cyan);
+        }
+
+        .property-list {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .property-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: border-color 0.2s;
+        }
+
+        .property-item:hover { border-color: var(--accent-cyan); }
+
+        .property-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-green);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-type {
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            margin-left: 0.5rem;
+        }
+
+        .property-desc { color: var(--text-secondary); font-size: 0.95rem; margin: 0; }
+
+        .drag-demo {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .drag-demo-title {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .drag-demo-list {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .drag-demo-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .drag-demo-item:hover {
+            border-color: var(--accent-cyan);
+            transform: scale(1.02);
+        }
+
+        .drag-demo-item.dragging {
+            opacity: 0.5;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .drag-handle {
+            color: var(--text-muted);
+        }
+
+        .drag-demo-content {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .nav-content { flex-direction: column; gap: 1rem; }
+            .nav-links { justify-content: center; }
+            .part-header h1 { font-size: 2rem; }
+            .container { padding: 2rem 1rem; }
+            .nav-footer { flex-direction: column; }
+            .nav-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span>Flutter Lab</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">หน้าแรก</a>
+                <a href="part1-listview-basics.html" class="nav-link">Part 1</a>
+                <a href="part2-understanding-key.html" class="nav-link">Part 2</a>
+                <a href="part3-dismissible-widget.html" class="nav-link">Part 3</a>
+                <a href="part4-reorderable-listview.html" class="nav-link active">Part 4</a>
+                <a href="part5-advanced-task-manager.html" class="nav-link">Part 5</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="part-header">
+            <div class="part-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Part 4 of 5
+            </div>
+            <h1>ReorderableListView</h1>
+            <p class="part-description">
+                เรียนรู้การสร้าง Drag and Drop เพื่อจัดลำดับรายการด้วย ReorderableListView และ ReorderableListView.builder
+            </p>
+        </header>
+
+        <div class="objectives">
+            <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                สิ่งที่คุณจะได้เรียนรู้
+            </h3>
+            <ul>
+                <li>เข้าใจหลักการทำงานของ ReorderableListView</li>
+                <li>ใช้ ReorderableListView.builder สำหรับ dynamic list</li>
+                <li>เข้าใจความสำคัญของ Key ใน ReorderableListView</li>
+                <li>จัดการ onReorder callback อย่างถูกต้อง</li>
+                <li>สร้าง Drag Handle ที่ชัดเจน</li>
+                <li>รวม Reorderable กับ Dismissible</li>
+            </ul>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <section class="section">
+            <h2><span class="icon">🔄</span> ReorderableListView คืออะไร?</h2>
+            
+            <p>
+                <strong>ReorderableListView</strong> เป็น Widget ที่ช่วยให้ผู้ใช้สามารถ "ลาก" (Drag) รายการเพื่อจัดลำดับใหม่ได้ 
+                เหมาะสำหรับแอปที่ต้องการให้ผู้ใช้จัดลำดับความสำคัญ เช่น todo list, playlist, หรือ priority queue
+            </p>
+
+            <div class="drag-demo">
+                <p class="drag-demo-title">ตัวอย่าง Drag and Drop</p>
+                <div class="drag-demo-list" id="dragDemoList">
+                    <div class="drag-demo-item" draggable="true">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="drag-demo-content">
+                            <strong>1. เรียนรู้ ListView</strong>
+                        </div>
+                    </div>
+                    <div class="drag-demo-item" draggable="true">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="drag-demo-content">
+                            <strong>2. เข้าใจ Key</strong>
+                        </div>
+                    </div>
+                    <div class="drag-demo-item" draggable="true">
+                        <span class="drag-handle">⋮⋮</span>
+                        <div class="drag-demo-content">
+                            <strong>3. ใช้ Dismissible</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[User Long Press / Drag Handle] --> B[Item Becomes Draggable]
+    B --> C[User Drags Item]
+    C --> D[Visual Feedback]
+    D --> E[User Drops Item]
+    E --> F[onReorder Callback]
+    F --> G[Update List Order]
+    G --> H[UI Rebuilds]
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Basic Structure -->
+        <section class="section">
+            <h2><span class="icon">🏗️</span> โครงสร้างพื้นฐาน</h2>
+
+            <p>
+                ReorderableListView มี 2 แบบหลักๆ คือ:
+            </p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Constructor</th>
+                        <th>ใช้เมื่อ</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ReorderableListView()</code></td>
+                        <td>รายการน้อย, ไม่เปลี่ยนแปลงบ่อย</td>
+                        <td>สร้าง Widget ทั้งหมดทันที</td>
+                    </tr>
+                    <tr>
+                        <td><code>ReorderableListView.builder()</code></td>
+                        <td>รายการมาก, Dynamic list</td>
+                        <td>Lazy loading - สร้างเฉพาะที่มองเห็น</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Property ที่สำคัญ</h3>
+
+            <div class="property-list">
+                <div class="property-item">
+                    <div class="property-name">onReorder <span class="property-type">void Function(int oldIndex, int newIndex) (required)</span></div>
+                    <p class="property-desc">Callback เมื่อผู้ใช้ drop item - ต้อง update data ให้สอดคล้องกับ UI</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">children <span class="property-type">List&lt;Widget&gt;</span></div>
+                    <p class="property-desc">รายการ Widget ที่จะแสดง - <strong>ทุก child ต้องมี Key</strong></p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">itemBuilder <span class="property-type">Widget Function(BuildContext, int)</span></div>
+                    <p class="property-desc">สำหรับ builder constructor - สร้าง Widget ตาม index</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">itemCount <span class="property-type">int</span></div>
+                    <p class="property-desc">จำนวน item ทั้งหมด (สำหรับ builder)</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">proxyDecorator <span class="property-type">Widget Function(Widget, int, Animation)?</span></div>
+                    <p class="property-desc">ปรับแต่ง widget ขณะลาก (เช่น เพิ่ม shadow, scale)</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">buildDefaultDragHandles <span class="property-type">bool</span></div>
+                    <p class="property-desc">Default: true - แสดง drag handle อัตโนมัติ (ด้านขวา)</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    สำคัญ: ทุก item ต้องมี Key
+                </div>
+                <div class="info-content">
+                    ReorderableListView ใช้ Key ในการติดตาม item ขณะลาก 
+                    ถ้าไม่มี Key จะเกิด error ทันที: <code>"Every item of this list must have a key"</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Basic ReorderableListView -->
+        <section class="section">
+            <h2><span class="icon">🎯</span> ReorderableListView พื้นฐาน</h2>
+
+            <p>
+                เริ่มจากการสร้าง ReorderableListView แบบง่ายๆ:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/basic_reorderable_example.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">BasicReorderableExample</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">BasicReorderableExample</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">BasicReorderableExample</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_BasicReorderableExampleState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_BasicReorderableExampleState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">BasicReorderableExample</span>&gt; {
+  <span class="comment">// รายการ items - ใช้ Map เพื่อเก็บ unique ID</span>
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Map</span>&lt;<span class="class">String</span>, <span class="keyword">dynamic</span>&gt;&gt; _items = [
+    {<span class="string">'id'</span>: <span class="string">'a'</span>, <span class="string">'title'</span>: <span class="string">'🏆 Priority 1'</span>},
+    {<span class="string">'id'</span>: <span class="string">'b'</span>, <span class="string">'title'</span>: <span class="string">'🥈 Priority 2'</span>},
+    {<span class="string">'id'</span>: <span class="string">'c'</span>, <span class="string">'title'</span>: <span class="string">'🥉 Priority 3'</span>},
+    {<span class="string">'id'</span>: <span class="string">'d'</span>, <span class="string">'title'</span>: <span class="string">'📋 Priority 4'</span>},
+  ];
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Priority List'</span>)),
+      body: <span class="class">ReorderableListView</span>(
+        <span class="comment">// padding รอบ list</span>
+        padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+        
+        <span class="comment">// Callback เมื่อ reorder - สำคัญมาก!</span>
+        onReorder: (oldIndex, newIndex) {
+          <span class="function">setState</span>(() {
+            <span class="comment">// ⚠️ เมื่อย้ายลง newIndex จะมากกว่า oldIndex 1</span>
+            <span class="comment">// ต้องลบ 1 ออกก่อนเพื่อให้ได้ตำแหน่งที่ถูกต้อง</span>
+            <span class="keyword">if</span> (newIndex &gt; oldIndex) {
+              newIndex -= <span class="number">1</span>;
+            }
+            
+            <span class="comment">// ย้าย item จากตำแหน่งเก่าไปตำแหน่งใหม่</span>
+            <span class="keyword">final</span> item = _items.<span class="function">removeAt</span>(oldIndex);
+            _items.<span class="function">insert</span>(newIndex, item);
+          });
+        },
+        
+        <span class="comment">// รายการ children - ทุกตัวต้องมี Key!</span>
+        children: _items.<span class="function">map</span>((item) {
+          <span class="keyword">return</span> <span class="class">Card</span>(
+            <span class="comment">// Key จำเป็นสำหรับทุก child</span>
+            key: <span class="class">ValueKey</span>(item[<span class="string">'id'</span>]),
+            margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">8</span>),
+            child: <span class="class">ListTile</span>(
+              title: <span class="class">Text</span>(item[<span class="string">'title'</span>]),
+              subtitle: <span class="class">Text</span>(<span class="string">'ID: ${item['id']}'</span>),
+              <span class="comment">// Drag handle จะแสดงอัตโนมัติด้านขวา</span>
+            ),
+          );
+        }).<span class="function">toList</span>(),
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    ทำไม newIndex ต้องลบ 1?
+                </div>
+                <div class="info-content">
+                    เมื่อลาก item ลงล่าง Flutter คำนวณ <code>newIndex</code> รวมตำแหน่งเดิมของ item ด้วย 
+                    ดังนั้นถ้าย้ายจาก index 0 ไป index 2 (ลงล่าง) <code>newIndex</code> จะเป็น 3 
+                    ต้องลบ 1 เพื่อให้ได้ตำแหน่งจริงที่ต้องการ insert
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: ReorderableListView.builder -->
+        <section class="section">
+            <h2><span class="icon">⚡</span> ReorderableListView.builder</h2>
+
+            <p>
+                สำหรับ list ขนาดใหญ่ ควรใช้ <code>.builder</code> เพื่อ performance ที่ดีกว่า:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/reorderable_builder_example.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+<span class="keyword">import</span> <span class="string">'../models/task.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">ReorderableBuilderExample</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">ReorderableBuilderExample</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">ReorderableBuilderExample</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_ReorderableBuilderExampleState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_ReorderableBuilderExampleState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">ReorderableBuilderExample</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Task</span>&gt; _tasks = [
+    <span class="class">Task</span>(id: <span class="string">'1'</span>, title: <span class="string">'เรียนรู้ ListView'</span>, description: <span class="string">'Part 1'</span>),
+    <span class="class">Task</span>(id: <span class="string">'2'</span>, title: <span class="string">'เข้าใจ Key'</span>, description: <span class="string">'Part 2'</span>),
+    <span class="class">Task</span>(id: <span class="string">'3'</span>, title: <span class="string">'ใช้ Dismissible'</span>, description: <span class="string">'Part 3'</span>),
+    <span class="class">Task</span>(id: <span class="string">'4'</span>, title: <span class="string">'Drag and Drop'</span>, description: <span class="string">'Part 4'</span>),
+    <span class="class">Task</span>(id: <span class="string">'5'</span>, title: <span class="string">'รวมทุกอย่าง'</span>, description: <span class="string">'Part 5'</span>),
+  ];
+
+  <span class="keyword">void</span> <span class="function">_onReorder</span>(<span class="keyword">int</span> oldIndex, <span class="keyword">int</span> newIndex) {
+    <span class="function">setState</span>(() {
+      <span class="keyword">if</span> (newIndex &gt; oldIndex) {
+        newIndex -= <span class="number">1</span>;
+      }
+      <span class="keyword">final</span> task = _tasks.<span class="function">removeAt</span>(oldIndex);
+      _tasks.<span class="function">insert</span>(newIndex, task);
+    });
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(
+        title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Task Priority'</span>),
+        centerTitle: <span class="keyword">true</span>,
+      ),
+      body: <span class="class">ReorderableListView</span>.<span class="function">builder</span>(
+        padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+        
+        <span class="comment">// จำนวน items</span>
+        itemCount: _tasks.length,
+        
+        <span class="comment">// Callback เมื่อ reorder</span>
+        onReorder: <span class="function">_onReorder</span>,
+        
+        <span class="comment">// Builder function - สร้าง Widget ตาม index</span>
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> task = _tasks[index];
+          
+          <span class="keyword">return</span> <span class="class">Card</span>(
+            <span class="comment">// Key ต้องอยู่ที่ root widget ที่ return</span>
+            key: <span class="class">ValueKey</span>(task.id),
+            margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">12</span>),
+            elevation: <span class="number">2</span>,
+            shape: <span class="class">RoundedRectangleBorder</span>(
+              borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+            ),
+            child: <span class="class">ListTile</span>(
+              contentPadding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">symmetric</span>(
+                horizontal: <span class="number">16</span>,
+                vertical: <span class="number">8</span>,
+              ),
+              leading: <span class="class">CircleAvatar</span>(
+                backgroundColor: task.isCompleted 
+                    ? <span class="class">Colors</span>.green 
+                    : <span class="class">Theme</span>.<span class="function">of</span>(context).primaryColor,
+                child: <span class="class">Text</span>(
+                  <span class="string">'${index + 1}'</span>,
+                  style: <span class="keyword">const</span> <span class="class">TextStyle</span>(color: <span class="class">Colors</span>.white),
+                ),
+              ),
+              title: <span class="class">Text</span>(
+                task.title,
+                style: <span class="class">TextStyle</span>(
+                  decoration: task.isCompleted 
+                      ? <span class="class">TextDecoration</span>.lineThrough 
+                      : <span class="keyword">null</span>,
+                ),
+              ),
+              subtitle: <span class="class">Text</span>(task.description),
+              trailing: <span class="class">ReorderableDragStartListener</span>(
+                index: index,
+                child: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.drag_handle),
+              ),
+            ),
+          );
+        },
+        
+        <span class="comment">// Optional: ปรับแต่ง widget ขณะลาก</span>
+        proxyDecorator: (child, index, animation) {
+          <span class="keyword">return</span> <span class="class">AnimatedBuilder</span>(
+            animation: animation,
+            builder: (context, child) {
+              <span class="keyword">final</span> <span class="keyword">double</span> elevation = <span class="function">lerpDouble</span>(<span class="number">0</span>, <span class="number">8</span>, animation.value)!;
+              <span class="keyword">return</span> <span class="class">Material</span>(
+                elevation: elevation,
+                borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+                shadowColor: <span class="class">Colors</span>.black26,
+                child: child,
+              );
+            },
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+}
+
+<span class="comment">// อย่าลืม import</span>
+<span class="keyword">import</span> <span class="string">'dart:ui'</span> show lerpDouble;</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Custom Drag Handle -->
+        <section class="section">
+            <h2><span class="icon">✋</span> Custom Drag Handle</h2>
+
+            <p>
+                By default, ReorderableListView สร้าง drag handle ให้อัตโนมัติ 
+                แต่เราสามารถปิดและสร้างเองได้โดยใช้ <code>ReorderableDragStartListener</code>:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/custom_drag_handle.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">CustomDragHandleExample</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">CustomDragHandleExample</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">CustomDragHandleExample</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_CustomDragHandleExampleState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_CustomDragHandleExampleState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">CustomDragHandleExample</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Map</span>&lt;<span class="class">String</span>, <span class="keyword">dynamic</span>&gt;&gt; _items = [
+    {<span class="string">'id'</span>: <span class="string">'1'</span>, <span class="string">'title'</span>: <span class="string">'Item A'</span>, <span class="string">'color'</span>: <span class="class">Colors</span>.blue},
+    {<span class="string">'id'</span>: <span class="string">'2'</span>, <span class="string">'title'</span>: <span class="string">'Item B'</span>, <span class="string">'color'</span>: <span class="class">Colors</span>.green},
+    {<span class="string">'id'</span>: <span class="string">'3'</span>, <span class="string">'title'</span>: <span class="string">'Item C'</span>, <span class="string">'color'</span>: <span class="class">Colors</span>.orange},
+    {<span class="string">'id'</span>: <span class="string">'4'</span>, <span class="string">'title'</span>: <span class="string">'Item D'</span>, <span class="string">'color'</span>: <span class="class">Colors</span>.purple},
+  ];
+
+  <span class="keyword">void</span> <span class="function">_onReorder</span>(<span class="keyword">int</span> oldIndex, <span class="keyword">int</span> newIndex) {
+    <span class="function">setState</span>(() {
+      <span class="keyword">if</span> (newIndex &gt; oldIndex) newIndex -= <span class="number">1</span>;
+      <span class="keyword">final</span> item = _items.<span class="function">removeAt</span>(oldIndex);
+      _items.<span class="function">insert</span>(newIndex, item);
+    });
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Custom Drag Handle'</span>)),
+      body: <span class="class">ReorderableListView</span>.<span class="function">builder</span>(
+        padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+        
+        <span class="comment">// ปิด default drag handles</span>
+        buildDefaultDragHandles: <span class="keyword">false</span>,
+        
+        itemCount: _items.length,
+        onReorder: <span class="function">_onReorder</span>,
+        
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> item = _items[index];
+          
+          <span class="keyword">return</span> <span class="class">Card</span>(
+            key: <span class="class">ValueKey</span>(item[<span class="string">'id'</span>]),
+            margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">12</span>),
+            shape: <span class="class">RoundedRectangleBorder</span>(
+              borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+            ),
+            child: <span class="class">Container</span>(
+              decoration: <span class="class">BoxDecoration</span>(
+                borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+                border: <span class="class">Border</span>.<span class="function">all</span>(
+                  color: item[<span class="string">'color'</span>].<span class="function">withOpacity</span>(<span class="number">0.3</span>),
+                  width: <span class="number">2</span>,
+                ),
+              ),
+              child: <span class="class">Row</span>(
+                children: [
+                  <span class="comment">// Custom Drag Handle ด้านซ้าย</span>
+                  <span class="class">ReorderableDragStartListener</span>(
+                    index: index,
+                    child: <span class="class">Container</span>(
+                      width: <span class="number">48</span>,
+                      height: <span class="number">64</span>,
+                      decoration: <span class="class">BoxDecoration</span>(
+                        color: item[<span class="string">'color'</span>].<span class="function">withOpacity</span>(<span class="number">0.1</span>),
+                        borderRadius: <span class="keyword">const</span> <span class="class">BorderRadius</span>.<span class="function">only</span>(
+                          topLeft: <span class="class">Radius</span>.<span class="function">circular</span>(<span class="number">10</span>),
+                          bottomLeft: <span class="class">Radius</span>.<span class="function">circular</span>(<span class="number">10</span>),
+                        ),
+                      ),
+                      child: <span class="class">Icon</span>(
+                        <span class="class">Icons</span>.drag_indicator,
+                        color: item[<span class="string">'color'</span>],
+                      ),
+                    ),
+                  ),
+                  
+                  <span class="comment">// Content</span>
+                  <span class="class">Expanded</span>(
+                    child: <span class="class">Padding</span>(
+                      padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+                      child: <span class="class">Column</span>(
+                        crossAxisAlignment: <span class="class">CrossAxisAlignment</span>.start,
+                        children: [
+                          <span class="class">Text</span>(
+                            item[<span class="string">'title'</span>],
+                            style: <span class="keyword">const</span> <span class="class">TextStyle</span>(
+                              fontWeight: <span class="class">FontWeight</span>.bold,
+                              fontSize: <span class="number">16</span>,
+                            ),
+                          ),
+                          <span class="class">Text</span>(
+                            <span class="string">'ลากที่แถบด้านซ้ายเพื่อจัดลำดับ'</span>,
+                            style: <span class="class">TextStyle</span>(
+                              color: <span class="class">Colors</span>.grey.shade600,
+                              fontSize: <span class="number">12</span>,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    ReorderableDragStartListener
+                </div>
+                <div class="info-content">
+                    <code>ReorderableDragStartListener</code> ทำให้ child widget กลายเป็น drag handle 
+                    ต้องส่ง <code>index</code> เพื่อบอก ReorderableListView ว่า drag item ตัวไหน
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: onReorder Logic -->
+        <section class="section">
+            <h2><span class="icon">🧠</span> เข้าใจ onReorder Logic</h2>
+
+            <p>
+                <code>onReorder(oldIndex, newIndex)</code> มีพฤติกรรมที่ต้องเข้าใจ:
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart TB
+    subgraph Before["ก่อน Reorder"]
+        B0["[0] Item A"]
+        B1["[1] Item B"]
+        B2["[2] Item C"]
+        B3["[3] Item D"]
+    end
+    
+    subgraph MoveDown["ย้าย A ลงไปหลัง C"]
+        M1["oldIndex = 0"]
+        M2["newIndex = 3"]
+        M3["หลัง adjust: newIndex = 2"]
+    end
+    
+    subgraph After["หลัง Reorder"]
+        A0["[0] Item B"]
+        A1["[1] Item C"]
+        A2["[2] Item A"]
+        A3["[3] Item D"]
+    end
+    
+    Before --> MoveDown
+    MoveDown --> After
+                </div>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        onReorder helper function
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="comment">/// Helper function สำหรับ reorder list</span>
+<span class="comment">/// ใช้ได้กับ List ทุกประเภท</span>
+<span class="keyword">void</span> <span class="function">reorderList</span>&lt;<span class="class">T</span>&gt;(<span class="class">List</span>&lt;<span class="class">T</span>&gt; list, <span class="keyword">int</span> oldIndex, <span class="keyword">int</span> newIndex) {
+  <span class="comment">// เมื่อย้าย item ลง (newIndex > oldIndex)</span>
+  <span class="comment">// Flutter คำนวณ newIndex รวมตำแหน่งเดิมของ item</span>
+  <span class="comment">// ต้องลบ 1 เพื่อให้ได้ตำแหน่งจริง</span>
+  <span class="keyword">if</span> (newIndex &gt; oldIndex) {
+    newIndex -= <span class="number">1</span>;
+  }
+  
+  <span class="comment">// ลบ item จากตำแหน่งเดิม</span>
+  <span class="keyword">final</span> item = list.<span class="function">removeAt</span>(oldIndex);
+  
+  <span class="comment">// ใส่ item ที่ตำแหน่งใหม่</span>
+  list.<span class="function">insert</span>(newIndex, item);
+}
+
+<span class="comment">// การใช้งาน:</span>
+<span class="comment">// onReorder: (oldIndex, newIndex) {</span>
+<span class="comment">//   setState(() {</span>
+<span class="comment">//     reorderList(_items, oldIndex, newIndex);</span>
+<span class="comment">//   });</span>
+<span class="comment">// },</span></pre>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>กรณี</th>
+                        <th>oldIndex</th>
+                        <th>newIndex (raw)</th>
+                        <th>newIndex (adjusted)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ย้ายขึ้น (0→1)</td>
+                        <td>1</td>
+                        <td>0</td>
+                        <td>0 (ไม่ต้อง adjust)</td>
+                    </tr>
+                    <tr>
+                        <td>ย้ายลง (0→2)</td>
+                        <td>0</td>
+                        <td>3</td>
+                        <td>2 (ลบ 1)</td>
+                    </tr>
+                    <tr>
+                        <td>ย้ายลงสุด (0→last)</td>
+                        <td>0</td>
+                        <td>length</td>
+                        <td>length-1 (ลบ 1)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 7: Combine with Dismissible -->
+        <section class="section">
+            <h2><span class="icon">🔗</span> รวม Reorderable กับ Dismissible</h2>
+
+            <p>
+                เราสามารถรวม ReorderableListView กับ Dismissible ได้ แต่ต้องจัดการ Key อย่างถูกต้อง:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/reorderable_dismissible.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+<span class="keyword">import</span> <span class="string">'../models/task.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">ReorderableDismissibleList</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">ReorderableDismissibleList</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">ReorderableDismissibleList</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_ReorderableDismissibleListState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_ReorderableDismissibleListState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">ReorderableDismissibleList</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Task</span>&gt; _tasks = [
+    <span class="class">Task</span>(id: <span class="string">'1'</span>, title: <span class="string">'Task 1'</span>, description: <span class="string">'Description 1'</span>),
+    <span class="class">Task</span>(id: <span class="string">'2'</span>, title: <span class="string">'Task 2'</span>, description: <span class="string">'Description 2'</span>),
+    <span class="class">Task</span>(id: <span class="string">'3'</span>, title: <span class="string">'Task 3'</span>, description: <span class="string">'Description 3'</span>),
+  ];
+
+  <span class="keyword">void</span> <span class="function">_onReorder</span>(<span class="keyword">int</span> oldIndex, <span class="keyword">int</span> newIndex) {
+    <span class="function">setState</span>(() {
+      <span class="keyword">if</span> (newIndex &gt; oldIndex) newIndex -= <span class="number">1</span>;
+      <span class="keyword">final</span> task = _tasks.<span class="function">removeAt</span>(oldIndex);
+      _tasks.<span class="function">insert</span>(newIndex, task);
+    });
+  }
+
+  <span class="keyword">void</span> <span class="function">_onDismissed</span>(<span class="keyword">int</span> index) {
+    <span class="keyword">final</span> task = _tasks[index];
+    <span class="function">setState</span>(() {
+      _tasks.<span class="function">removeAt</span>(index);
+    });
+    <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">showSnackBar</span>(
+      <span class="class">SnackBar</span>(content: <span class="class">Text</span>(<span class="string">'Deleted ${task.title}'</span>)),
+    );
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Reorderable + Dismissible'</span>)),
+      body: <span class="class">ReorderableListView</span>.<span class="function">builder</span>(
+        padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+        buildDefaultDragHandles: <span class="keyword">false</span>,
+        itemCount: _tasks.length,
+        onReorder: <span class="function">_onReorder</span>,
+        
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> task = _tasks[index];
+          
+          <span class="comment">// Key ต้องอยู่ที่ Dismissible (outermost widget)</span>
+          <span class="keyword">return</span> <span class="class">Dismissible</span>(
+            key: <span class="class">ValueKey</span>(task.id),
+            direction: <span class="class">DismissDirection</span>.endToStart,
+            
+            background: <span class="class">Container</span>(
+              alignment: <span class="class">Alignment</span>.centerRight,
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(right: <span class="number">20</span>),
+              margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">12</span>),
+              decoration: <span class="class">BoxDecoration</span>(
+                color: <span class="class">Colors</span>.red,
+                borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+              ),
+              child: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.delete, color: <span class="class">Colors</span>.white),
+            ),
+            
+            onDismissed: (_) =&gt; <span class="function">_onDismissed</span>(index),
+            
+            child: <span class="class">Card</span>(
+              margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">12</span>),
+              shape: <span class="class">RoundedRectangleBorder</span>(
+                borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+              ),
+              child: <span class="class">ListTile</span>(
+                <span class="comment">// Custom drag handle ด้านซ้าย</span>
+                leading: <span class="class">ReorderableDragStartListener</span>(
+                  index: index,
+                  child: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.drag_handle),
+                ),
+                title: <span class="class">Text</span>(task.title),
+                subtitle: <span class="class">Text</span>(task.description),
+                trailing: <span class="class">IconButton</span>(
+                  icon: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.delete_outline),
+                  onPressed: () =&gt; <span class="function">_onDismissed</span>(index),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Key ต้องอยู่ที่ Dismissible
+                </div>
+                <div class="info-content">
+                    เมื่อ wrap Card ด้วย Dismissible ต้องย้าย Key ไปที่ Dismissible 
+                    เพราะ ReorderableListView ต้องการ Key ที่ root widget ของแต่ละ item
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Common Mistakes -->
+        <section class="section">
+            <h2><span class="icon">⚠️</span> ข้อผิดพลาดที่พบบ่อย</h2>
+
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>ลืมใส่ Key</h4>
+                        <p>ทุก item ใน ReorderableListView ต้องมี Key ไม่งั้นจะเกิด error ทันที</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>ไม่ adjust newIndex</h4>
+                        <p>ลืมลบ 1 จาก newIndex เมื่อย้ายลง ทำให้ item ไปผิดตำแหน่ง</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Key อยู่ผิดที่</h4>
+                        <p>Key ต้องอยู่ที่ outermost widget ที่ return จาก itemBuilder</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>ใช้ ReorderableDragStartListener ผิดวิธี</h4>
+                        <p>ต้องส่ง index ที่ถูกต้อง และต้องปิด buildDefaultDragHandles ก่อน</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Summary -->
+        <section class="section">
+            <h2><span class="icon">📝</span> สรุป</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>หัวข้อ</th>
+                        <th>รายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ReorderableListView</strong></td>
+                        <td>Widget สำหรับ drag and drop จัดลำดับรายการ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>.builder()</strong></td>
+                        <td>ใช้สำหรับ list ขนาดใหญ่ (lazy loading)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key</strong></td>
+                        <td>จำเป็นต้องมีทุก item - ใช้ ValueKey กับ unique ID</td>
+                    </tr>
+                    <tr>
+                        <td><strong>onReorder</strong></td>
+                        <td>Callback เมื่อ drop - ต้อง adjust newIndex เมื่อย้ายลง</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ReorderableDragStartListener</strong></td>
+                        <td>สร้าง custom drag handle</td>
+                    </tr>
+                    <tr>
+                        <td><strong>proxyDecorator</strong></td>
+                        <td>ปรับแต่ง widget ขณะลาก</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Part 5: Advanced Task Manager
+                </div>
+                <div class="info-content">
+                    ใน Part สุดท้าย เราจะรวมทุกอย่างที่เรียนมา (ListView, Key, Dismissible, ReorderableListView) 
+                    เพื่อสร้าง Task Manager แบบครบวงจร พร้อม State Management ที่ดี!
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation Footer -->
+        <footer class="nav-footer">
+            <a href="part3-dismissible-widget.html" class="nav-btn prev">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Part 3: Dismissible
+            </a>
+            <a href="part5-advanced-task-manager.html" class="nav-btn next">
+                Part 5: Advanced Task Manager
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#06b6d4',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#06b6d4',
+                lineColor: '#64748b',
+                secondaryColor: '#1a1a24',
+                tertiaryColor: '#0a0a0f',
+                background: '#1a1a24',
+                mainBkg: '#1a1a24',
+                nodeBorder: '#06b6d4',
+                clusterBkg: '#12121a',
+                clusterBorder: '#2a2a3a',
+                titleColor: '#fff',
+                edgeLabelBackground: '#1a1a24'
+            }
+        });
+
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    `;
+                }, 2000);
+            });
+        }
+
+        // Simple drag demo
+        const demoList = document.getElementById('dragDemoList');
+        if (demoList) {
+            const items = demoList.querySelectorAll('.drag-demo-item');
+            items.forEach(item => {
+                item.addEventListener('dragstart', () => item.classList.add('dragging'));
+                item.addEventListener('dragend', () => item.classList.remove('dragging'));
+            });
+        }
+    </script>
+</body>
+</html>

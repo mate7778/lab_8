@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter Lab: ListView & Key Mastery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans Thai', 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.4;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 30% at 50% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0 6rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .flutter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            margin-bottom: 1.5rem;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.4); }
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .hero-description {
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin: 4rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.1);
+        }
+
+        .stat-number {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Lab Cards */
+        .labs-section {
+            margin-top: 4rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-color), transparent);
+        }
+
+        .labs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .lab-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .lab-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--card-accent, var(--accent-blue)), transparent);
+        }
+
+        .lab-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--card-accent, var(--accent-blue));
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .lab-card.part1 { --card-accent: var(--accent-blue); }
+        .lab-card.part2 { --card-accent: var(--accent-purple); }
+        .lab-card.part3 { --card-accent: var(--accent-pink); }
+        .lab-card.part4 { --card-accent: var(--accent-orange); }
+        .lab-card.part5 { --card-accent: var(--accent-green); }
+
+        .lab-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--card-accent), rgba(0,0,0,0.3));
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .lab-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .lab-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .lab-topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .topic-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .lab-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .meta-icon {
+            opacity: 0.7;
+        }
+
+        .progress-badge {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-green);
+        }
+
+        /* Learning Path */
+        .learning-path {
+            margin: 5rem 0;
+            padding: 3rem;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .path-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .path-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .path-header p {
+            color: var(--text-muted);
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: transparent;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 4rem;
+        }
+
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .labs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="container">
+        <section class="hero">
+            <div class="flutter-badge">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M14.5 2L4 12.5L7.5 16L21 2H14.5Z" fill="currentColor"/>
+                    <path d="M14.5 12L7.5 19L11 22.5L21 12.5L14.5 12Z" fill="currentColor"/>
+                </svg>
+                Flutter Practical Lab
+            </div>
+            <h1>ListView & Key Mastery</h1>
+            <h2>Task Manager Project</h2>
+            <p class="hero-description">
+                เรียนรู้การใช้งาน ListView และ Key ใน Flutter ผ่านการสร้างแอป Task Manager 
+                ตั้งแต่พื้นฐานจนถึงขั้นสูง พร้อม Dismissible, Drag & Drop และ Animation
+            </p>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">บทปฏิบัติการ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">ตัวอย่างโค้ด</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">1</div>
+                <div class="stat-label">โปรเจกต์สมบูรณ์</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">ทักษะที่ได้รับ</div>
+            </div>
+        </div>
+
+        <section class="labs-section">
+            <div class="section-header">
+                <h2>📚 บทปฏิบัติการ</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="labs-grid">
+                <a href="part1-listview-basics.html" class="lab-card part1">
+                    <div class="lab-number">01</div>
+                    <h3 class="lab-title">พื้นฐาน ListView</h3>
+                    <p class="lab-subtitle">
+                        เริ่มต้นสร้างรายการ Task ด้วย ListView.builder 
+                        พร้อมเข้าใจหลักการแสดงผลรายการใน Flutter
+                    </p>
+                    <div class="lab-topics">
+                        <span class="topic-tag">ListView.builder</span>
+                        <span class="topic-tag">ListTile</span>
+                        <span class="topic-tag">StatefulWidget</span>
+                        <span class="topic-tag">setState</span>
+                    </div>
+                    <div class="lab-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            30-45 นาที
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📊</span>
+                            ระดับพื้นฐาน
+                        </div>
+                    </div>
+                </a>
+
+                <a href="part2-understanding-key.html" class="lab-card part2">
+                    <div class="lab-number">02</div>
+                    <h3 class="lab-title">เข้าใจ Key</h3>
+                    <p class="lab-subtitle">
+                        เรียนรู้ว่า Key คืออะไร ทำไมถึงสำคัญ 
+                        และปัญหาที่เกิดขึ้นเมื่อไม่ใช้ Key
+                    </p>
+                    <div class="lab-topics">
+                        <span class="topic-tag">ValueKey</span>
+                        <span class="topic-tag">ObjectKey</span>
+                        <span class="topic-tag">UniqueKey</span>
+                        <span class="topic-tag">GlobalKey</span>
+                    </div>
+                    <div class="lab-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            45-60 นาที
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📊</span>
+                            ระดับกลาง
+                        </div>
+                    </div>
+                </a>
+
+                <a href="part3-dismissible.html" class="lab-card part3">
+                    <div class="lab-number">03</div>
+                    <h3 class="lab-title">Dismissible Widget</h3>
+                    <p class="lab-subtitle">
+                        เพิ่มความสามารถลบและแก้ไข Task ด้วยการ Swipe 
+                        พร้อม Animation และ Confirmation Dialog
+                    </p>
+                    <div class="lab-topics">
+                        <span class="topic-tag">Dismissible</span>
+                        <span class="topic-tag">Swipe Actions</span>
+                        <span class="topic-tag">SnackBar</span>
+                        <span class="topic-tag">Undo</span>
+                    </div>
+                    <div class="lab-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            45-60 นาที
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📊</span>
+                            ระดับกลาง
+                        </div>
+                    </div>
+                </a>
+
+                <a href="part4-reorderable-list.html" class="lab-card part4">
+                    <div class="lab-number">04</div>
+                    <h3 class="lab-title">Drag & Drop</h3>
+                    <p class="lab-subtitle">
+                        จัดลำดับ Task ใหม่ด้วย ReorderableListView 
+                        พร้อม Custom Drag Handle และ Animation
+                    </p>
+                    <div class="lab-topics">
+                        <span class="topic-tag">ReorderableListView</span>
+                        <span class="topic-tag">Drag Handle</span>
+                        <span class="topic-tag">onReorder</span>
+                        <span class="topic-tag">proxyDecorator</span>
+                    </div>
+                    <div class="lab-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            45-60 นาที
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📊</span>
+                            ระดับกลาง-สูง
+                        </div>
+                    </div>
+                </a>
+
+                <a href="part5-advanced-task-manager.html" class="lab-card part5">
+                    <div class="lab-number">05</div>
+                    <h3 class="lab-title">Advanced Task Manager</h3>
+                    <p class="lab-subtitle">
+                        รวมทุกอย่างเข้าด้วยกัน สร้าง Task Manager แบบสมบูรณ์
+                        พร้อม Categories, Priority และ Animation
+                    </p>
+                    <div class="lab-topics">
+                        <span class="topic-tag">AnimatedList</span>
+                        <span class="topic-tag">Categories</span>
+                        <span class="topic-tag">Priority</span>
+                        <span class="topic-tag">Persistence</span>
+                    </div>
+                    <div class="lab-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon">⏱️</span>
+                            90-120 นาที
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon">📊</span>
+                            ระดับสูง
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section class="learning-path">
+            <div class="path-header">
+                <h2>🗺️ เส้นทางการเรียนรู้</h2>
+                <p>แผนภาพแสดงการต่อยอดจากพื้นฐานสู่ขั้นสูง</p>
+            </div>
+            <div class="mermaid">
+                %%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00d4ff', 'primaryTextColor': '#fff', 'primaryBorderColor': '#00d4ff', 'lineColor': '#a855f7', 'secondaryColor': '#1a1a24', 'tertiaryColor': '#12121a'}}}%%
+                graph LR
+                    A[📋 Part 1<br/>ListView Basics] --> B[🔑 Part 2<br/>Understanding Key]
+                    B --> C[👆 Part 3<br/>Dismissible]
+                    C --> D[🔀 Part 4<br/>Drag & Drop]
+                    D --> E[🚀 Part 5<br/>Advanced App]
+                    
+                    style A fill:#00d4ff,stroke:#00d4ff,color:#000
+                    style B fill:#a855f7,stroke:#a855f7,color:#fff
+                    style C fill:#ec4899,stroke:#ec4899,color:#fff
+                    style D fill:#f97316,stroke:#f97316,color:#000
+                    style E fill:#22c55e,stroke:#22c55e,color:#000
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>
+                สร้างด้วย ❤️ สำหรับการเรียนรู้ Flutter | 
+                <a href="https://flutter.dev" target="_blank">Flutter Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                darkMode: true,
+                background: 'transparent',
+                primaryColor: '#00d4ff',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#00d4ff',
+                lineColor: '#a855f7',
+                secondaryColor: '#1a1a24',
+                tertiaryColor: '#12121a',
+                fontFamily: 'Outfit, sans-serif'
+            }
+        });
+    </script>
+</body>
+</html>

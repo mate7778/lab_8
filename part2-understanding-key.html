@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 2: เข้าใจ Key | Flutter Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-code: #0d1117;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+            --code-comment: #8b949e;
+            --code-keyword: #ff7b72;
+            --code-string: #a5d6ff;
+            --code-function: #d2a8ff;
+            --code-class: #7ee787;
+            --code-number: #79c0ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans Thai', 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(168, 85, 247, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+        }
+
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-brand svg { color: var(--accent-purple); }
+        .nav-brand span { font-family: 'Outfit', sans-serif; font-weight: 600; }
+
+        .nav-links { display: flex; align-items: center; gap: 1rem; }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+            color: var(--accent-purple);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .part-header { margin-bottom: 3rem; }
+
+        .part-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.05));
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            margin-bottom: 1rem;
+        }
+
+        .part-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .part-description { color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; }
+
+        .objectives {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .objectives h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .objectives ul { list-style: none; }
+        .objectives li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+        }
+        .objectives li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+        }
+
+        .section { margin-bottom: 4rem; }
+
+        .section h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent-purple);
+        }
+
+        .section p { color: var(--text-secondary); margin-bottom: 1rem; }
+
+        .code-container {
+            position: relative;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-filename::before { content: '📄'; }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-purple);
+            color: #000;
+            border-color: var(--accent-purple);
+        }
+
+        .copy-btn.copied {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: #000;
+        }
+
+        pre {
+            background: var(--bg-code);
+            padding: 1.5rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        code { font-family: 'JetBrains Mono', monospace; }
+
+        .keyword { color: var(--code-keyword); }
+        .string { color: var(--code-string); }
+        .function { color: var(--code-function); }
+        .class-name { color: var(--code-class); }
+        .comment { color: var(--code-comment); font-style: italic; }
+        .number { color: var(--code-number); }
+        .decorator { color: var(--accent-orange); }
+        .property { color: var(--code-number); }
+
+        p code, li code {
+            background: var(--bg-card);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--accent-pink);
+        }
+
+        .info-box {
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .info-box.tip { background: rgba(34, 197, 94, 0.1); border-color: var(--accent-green); }
+        .info-box.warning { background: rgba(234, 179, 8, 0.1); border-color: var(--accent-yellow); }
+        .info-box.note { background: rgba(0, 212, 255, 0.1); border-color: var(--accent-blue); }
+        .info-box.danger { background: rgba(239, 68, 68, 0.1); border-color: var(--accent-red); }
+
+        .info-box h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box.tip h4 { color: var(--accent-green); }
+        .info-box.warning h4 { color: var(--accent-yellow); }
+        .info-box.note h4 { color: var(--accent-blue); }
+        .info-box.danger h4 { color: var(--accent-red); }
+
+        .info-box p { margin: 0; font-size: 0.9rem; }
+
+        .diagram-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--bg-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            color: var(--accent-purple);
+        }
+
+        .comparison-table td { color: var(--text-secondary); }
+        .comparison-table tr:last-child td { border-bottom: none; }
+
+        .comparison-table code {
+            background: var(--bg-code);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* Key Types Visual */
+        .key-types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .key-type-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .key-type-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-purple);
+        }
+
+        .key-type-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .key-type-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-purple);
+            margin-bottom: 0.5rem;
+        }
+
+        .key-type-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border: none;
+        }
+
+        .nav-btn-label { font-size: 0.75rem; color: var(--text-muted); }
+        .nav-btn.next .nav-btn-label { color: rgba(255,255,255,0.7); }
+        .nav-btn-title { font-family: 'Outfit', sans-serif; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .container { padding: 2rem 1rem; }
+            .part-header h1 { font-size: 2rem; }
+            .key-types-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M14.5 2L4 12.5L7.5 16L21 2H14.5Z" fill="currentColor"/>
+                    <path d="M14.5 12L7.5 19L11 22.5L21 12.5L14.5 12Z" fill="currentColor"/>
+                </svg>
+                <span>Flutter Lab</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">หน้าหลัก</a>
+                <a href="part1-listview-basics.html" class="nav-link">Part 1</a>
+                <a href="part2-understanding-key.html" class="nav-link active">Part 2</a>
+                <a href="part3-dismissible.html" class="nav-link">Part 3</a>
+                <a href="part4-reorderable-list.html" class="nav-link">Part 4</a>
+                <a href="part5-advanced-task-manager.html" class="nav-link">Part 5</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="part-header">
+            <div class="part-badge">🔑 Part 2 of 5</div>
+            <h1>เข้าใจ Key ใน Flutter</h1>
+            <p class="part-description">
+                เรียนรู้ว่า Key คืออะไร ทำไมถึงสำคัญ 
+                และปัญหาที่เกิดขึ้นเมื่อไม่ใช้ Key ในรายการที่มีการเปลี่ยนแปลง
+            </p>
+        </header>
+
+        <div class="objectives">
+            <h3>🎯 วัตถุประสงค์การเรียนรู้</h3>
+            <ul>
+                <li>เข้าใจว่า Key คืออะไรและทำไมถึงสำคัญ</li>
+                <li>เรียนรู้ประเภทของ Key ต่างๆ</li>
+                <li>เห็นปัญหาที่เกิดขึ้นเมื่อไม่ใช้ Key</li>
+                <li>ปรับปรุง TaskItem ให้ใช้ Key อย่างถูกต้อง</li>
+            </ul>
+        </div>
+
+        <!-- Section 1: What is Key? -->
+        <section class="section">
+            <h2>🔑 1. Key คืออะไร?</h2>
+            
+            <p>
+                <code>Key</code> คือตัวระบุเอกลักษณ์ (identifier) ที่ช่วยให้ Flutter 
+                แยกแยะ Widget ได้ถูกต้องเมื่อมีการเปลี่ยนแปลงในรายการ 
+                โดยเฉพาะเมื่อมีการเพิ่ม ลบ หรือสลับตำแหน่ง
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Key ช่วย Flutter ระบุตัวตน Widget</div>
+                <div class="mermaid">
+                    %%{init: {'theme': 'dark'}}%%
+                    graph LR
+                        subgraph Before["ก่อนเปลี่ยนแปลง"]
+                            A1["🔴 Task A"]
+                            A2["🟢 Task B"]
+                            A3["🔵 Task C"]
+                        end
+                        
+                        subgraph After["หลังลบ Task B"]
+                            B1["🔴 Task A"]
+                            B2["🔵 Task C"]
+                        end
+                        
+                        A1 --> B1
+                        A3 --> B2
+                        
+                        style A1 fill:#ef4444,stroke:#ef4444,color:#fff
+                        style A2 fill:#22c55e,stroke:#22c55e,color:#fff
+                        style A3 fill:#3b82f6,stroke:#3b82f6,color:#fff
+                        style B1 fill:#ef4444,stroke:#ef4444,color:#fff
+                        style B2 fill:#3b82f6,stroke:#3b82f6,color:#fff
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <h4>📌 Flutter ใช้ Key อย่างไร?</h4>
+                <p>
+                    เมื่อ Flutter rebuild รายการ มันจะเปรียบเทียบ Widget ใหม่กับเก่า 
+                    ถ้าไม่มี Key จะใช้ <strong>ตำแหน่ง (index)</strong> ในการจับคู่ 
+                    แต่ถ้ามี Key จะใช้ <strong>Key</strong> ในการจับคู่แทน
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 2: Types of Keys -->
+        <section class="section">
+            <h2>📋 2. ประเภทของ Key</h2>
+
+            <div class="key-types-grid">
+                <div class="key-type-card">
+                    <div class="key-type-icon">🏷️</div>
+                    <div class="key-type-name">ValueKey</div>
+                    <div class="key-type-desc">ใช้ค่าที่ unique เช่น ID</div>
+                </div>
+                <div class="key-type-card">
+                    <div class="key-type-icon">📦</div>
+                    <div class="key-type-name">ObjectKey</div>
+                    <div class="key-type-desc">ใช้ object reference</div>
+                </div>
+                <div class="key-type-card">
+                    <div class="key-type-icon">🎲</div>
+                    <div class="key-type-name">UniqueKey</div>
+                    <div class="key-type-desc">สร้าง key unique ทุกครั้ง</div>
+                </div>
+                <div class="key-type-card">
+                    <div class="key-type-icon">🌍</div>
+                    <div class="key-type-name">GlobalKey</div>
+                    <div class="key-type-desc">เข้าถึง Widget/State ได้</div>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Key Type</th>
+                        <th>เมื่อไหร่ควรใช้</th>
+                        <th>ตัวอย่าง</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ValueKey</code></td>
+                        <td>มี ID หรือค่า unique ประจำ item</td>
+                        <td><code>ValueKey(task.id)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>ObjectKey</code></td>
+                        <td>ต้องการใช้ object ทั้งตัวเป็น key</td>
+                        <td><code>ObjectKey(task)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>UniqueKey</code></td>
+                        <td>ต้องการ rebuild ใหม่ทุกครั้ง</td>
+                        <td><code>UniqueKey()</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>GlobalKey</code></td>
+                        <td>ต้องการเข้าถึง Widget/State</td>
+                        <td><code>GlobalKey&lt;FormState&gt;()</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 3: The Problem -->
+        <section class="section">
+            <h2>⚠️ 3. ปัญหาเมื่อไม่ใช้ Key</h2>
+
+            <p>
+                มาดูกันว่าเกิดอะไรขึ้นเมื่อเราไม่ใช้ Key ในรายการที่มี StatefulWidget 
+                หรือมีการเปลี่ยนแปลงตำแหน่ง
+            </p>
+
+            <h3>สถานการณ์: Task มี TextField สำหรับ edit</h3>
+
+            <p>
+                ลองนึกภาพว่าแต่ละ TaskItem มี TextField ที่เก็บค่าใน State 
+                เมื่อเราลบ Task ตรงกลาง จะเกิดอะไรขึ้น?
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">ปัญหาเมื่อไม่ใช้ Key</div>
+                <div class="mermaid">
+                    %%{init: {'theme': 'dark'}}%%
+                    graph TB
+                        subgraph Before["ก่อนลบ (ไม่มี Key)"]
+                            direction TB
+                            W1["Widget 0: Task A<br/>State: 'ข้อความ A'"]
+                            W2["Widget 1: Task B<br/>State: 'ข้อความ B'"]
+                            W3["Widget 2: Task C<br/>State: 'ข้อความ C'"]
+                        end
+                        
+                        subgraph After["หลังลบ Task B"]
+                            direction TB
+                            X1["Widget 0: Task A<br/>State: 'ข้อความ A' ✅"]
+                            X2["Widget 1: Task C<br/>State: 'ข้อความ B' ❌"]
+                        end
+                        
+                        W1 -.-> X1
+                        W2 -.-> X2
+                        
+                        style W2 fill:#ef4444,stroke:#ef4444,color:#fff
+                        style X2 fill:#f97316,stroke:#f97316,color:#000
+                </div>
+            </div>
+
+            <div class="info-box danger">
+                <h4>❌ State ผิดตำแหน่ง!</h4>
+                <p>
+                    เมื่อลบ Task B ออก Flutter จะจับคู่ Widget ตาม index 
+                    ทำให้ Task C ได้รับ State เดิมของ Task B แทน!
+                </p>
+            </div>
+
+            <h3>ตัวอย่างโค้ดที่มีปัญหา</h3>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-filename">lib/widgets/editable_task_item.dart (มีปัญหา)</span>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+<span class="keyword">import</span> <span class="string">'../models/task.dart'</span>;
+
+<span class="comment">// ❌ StatefulWidget ที่เก็บ state ภายใน - มีปัญหาเมื่อไม่มี Key</span>
+<span class="keyword">class</span> <span class="class-name">EditableTaskItem</span> <span class="keyword">extends</span> <span class="class-name">StatefulWidget</span> {
+  <span class="keyword">final</span> <span class="class-name">Task</span> task;
+  <span class="keyword">final</span> <span class="class-name">VoidCallback</span> onDelete;
+
+  <span class="keyword">const</span> <span class="class-name">EditableTaskItem</span>({
+    <span class="comment">// ⚠️ ไม่มี key!</span>
+    <span class="keyword">super</span>.key,
+    <span class="keyword">required</span> <span class="keyword">this</span>.task,
+    <span class="keyword">required</span> <span class="keyword">this</span>.onDelete,
+  });
+
+  <span class="decorator">@override</span>
+  <span class="class-name">State</span>&lt;<span class="class-name">EditableTaskItem</span>&gt; <span class="function">createState</span>() => <span class="class-name">_EditableTaskItemState</span>();
+}
+
+<span class="keyword">class</span> <span class="class-name">_EditableTaskItemState</span> <span class="keyword">extends</span> <span class="class-name">State</span>&lt;<span class="class-name">EditableTaskItem</span>&gt; {
+  <span class="comment">// 📦 State ที่เก็บอยู่ใน StatefulWidget</span>
+  <span class="keyword">late</span> <span class="class-name">TextEditingController</span> _controller;
+  <span class="keyword">bool</span> _isEditing = <span class="keyword">false</span>;
+
+  <span class="decorator">@override</span>
+  <span class="keyword">void</span> <span class="function">initState</span>() {
+    <span class="keyword">super</span>.<span class="function">initState</span>();
+    _controller = <span class="class-name">TextEditingController</span>(text: widget.task.title);
+    <span class="function">print</span>(<span class="string">'initState: </span><span class="property">${widget.task.title}</span><span class="string">'</span>);
+  }
+
+  <span class="decorator">@override</span>
+  <span class="keyword">void</span> <span class="function">dispose</span>() {
+    _controller.<span class="function">dispose</span>();
+    <span class="keyword">super</span>.<span class="function">dispose</span>();
+  }
+
+  <span class="decorator">@override</span>
+  <span class="class-name">Widget</span> <span class="function">build</span>(<span class="class-name">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class-name">Card</span>(
+      margin: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">symmetric</span>(horizontal: <span class="number">16</span>, vertical: <span class="number">4</span>),
+      child: <span class="class-name">ListTile</span>(
+        title: _isEditing
+            ? <span class="class-name">TextField</span>(
+                controller: _controller,
+                autofocus: <span class="keyword">true</span>,
+                onSubmitted: (_) => <span class="function">setState</span>(() => _isEditing = <span class="keyword">false</span>),
+              )
+            : <span class="class-name">Text</span>(widget.task.title),
+        leading: <span class="class-name">CircleAvatar</span>(
+          child: <span class="class-name">Text</span>(widget.task.title[<span class="number">0</span>]),
+        ),
+        trailing: <span class="class-name">Row</span>(
+          mainAxisSize: <span class="class-name">MainAxisSize</span>.min,
+          children: [
+            <span class="class-name">IconButton</span>(
+              icon: <span class="class-name">Icon</span>(_isEditing ? <span class="class-name">Icons</span>.check : <span class="class-name">Icons</span>.edit),
+              onPressed: () => <span class="function">setState</span>(() => _isEditing = !_isEditing),
+            ),
+            <span class="class-name">IconButton</span>(
+              icon: <span class="keyword">const</span> <span class="class-name">Icon</span>(<span class="class-name">Icons</span>.delete),
+              onPressed: widget.onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 4: The Solution -->
+        <section class="section">
+            <h2>✅ 4. แก้ไขด้วย Key</h2>
+
+            <p>
+                การเพิ่ม <code>Key</code> ให้กับ Widget จะช่วยให้ Flutter 
+                ติดตาม Widget ได้อย่างถูกต้อง แม้ว่าตำแหน่งจะเปลี่ยนไป
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">เมื่อใช้ Key - Flutter ติดตามได้ถูกต้อง</div>
+                <div class="mermaid">
+                    %%{init: {'theme': 'dark'}}%%
+                    graph TB
+                        subgraph Before["ก่อนลบ (มี Key)"]
+                            direction TB
+                            K1["Key: 'A'<br/>Task A<br/>State: 'ข้อความ A'"]
+                            K2["Key: 'B'<br/>Task B<br/>State: 'ข้อความ B'"]
+                            K3["Key: 'C'<br/>Task C<br/>State: 'ข้อความ C'"]
+                        end
+                        
+                        subgraph After["หลังลบ Task B"]
+                            direction TB
+                            L1["Key: 'A'<br/>Task A<br/>State: 'ข้อความ A' ✅"]
+                            L2["Key: 'C'<br/>Task C<br/>State: 'ข้อความ C' ✅"]
+                        end
+                        
+                        K1 --> L1
+                        K3 --> L2
+                        
+                        style K2 fill:#ef4444,stroke:#ef4444,color:#fff
+                        style L1 fill:#22c55e,stroke:#22c55e,color:#000
+                        style L2 fill:#22c55e,stroke:#22c55e,color:#000
+                </div>
+            </div>
+
+            <h3>แก้ไข TaskItem ให้ใช้ Key</h3>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-filename">lib/widgets/task_item.dart (แก้ไขแล้ว)</span>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+<span class="keyword">import</span> <span class="string">'../models/task.dart'</span>;
+
+<span class="keyword">class</span> <span class="class-name">TaskItem</span> <span class="keyword">extends</span> <span class="class-name">StatelessWidget</span> {
+  <span class="keyword">final</span> <span class="class-name">Task</span> task;
+  <span class="keyword">final</span> <span class="class-name">ValueChanged</span>&lt;<span class="keyword">bool</span>?&gt; onToggle;
+
+  <span class="keyword">const</span> <span class="class-name">TaskItem</span>({
+    <span class="comment">// ✅ ไม่ต้องระบุ key ที่นี่ เพราะจะส่งผ่านตอนสร้าง</span>
+    <span class="keyword">super</span>.key,
+    <span class="keyword">required</span> <span class="keyword">this</span>.task,
+    <span class="keyword">required</span> <span class="keyword">this</span>.onToggle,
+  });
+
+  <span class="decorator">@override</span>
+  <span class="class-name">Widget</span> <span class="function">build</span>(<span class="class-name">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class-name">Card</span>(
+      margin: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">symmetric</span>(horizontal: <span class="number">16</span>, vertical: <span class="number">4</span>),
+      elevation: <span class="number">2</span>,
+      shape: <span class="class-name">RoundedRectangleBorder</span>(
+        borderRadius: <span class="class-name">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+      ),
+      child: <span class="class-name">ListTile</span>(
+        contentPadding: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">symmetric</span>(horizontal: <span class="number">16</span>, vertical: <span class="number">8</span>),
+        leading: <span class="class-name">Checkbox</span>(
+          value: task.isCompleted,
+          onChanged: onToggle,
+          shape: <span class="class-name">RoundedRectangleBorder</span>(
+            borderRadius: <span class="class-name">BorderRadius</span>.<span class="function">circular</span>(<span class="number">4</span>),
+          ),
+          activeColor: <span class="class-name">Colors</span>.green,
+        ),
+        title: <span class="class-name">Text</span>(
+          task.title,
+          style: <span class="class-name">TextStyle</span>(
+            fontSize: <span class="number">16</span>,
+            fontWeight: <span class="class-name">FontWeight</span>.w500,
+            decoration: task.isCompleted ? <span class="class-name">TextDecoration</span>.lineThrough : <span class="keyword">null</span>,
+            color: task.isCompleted ? <span class="class-name">Colors</span>.grey : <span class="class-name">Colors</span>.black87,
+          ),
+        ),
+        subtitle: task.description.isNotEmpty
+            ? <span class="class-name">Text</span>(
+                task.description,
+                style: <span class="class-name">TextStyle</span>(
+                  color: task.isCompleted ? <span class="class-name">Colors</span>.grey.shade400 : <span class="class-name">Colors</span>.grey.shade600,
+                ),
+                maxLines: <span class="number">2</span>,
+                overflow: <span class="class-name">TextOverflow</span>.ellipsis,
+              )
+            : <span class="keyword">null</span>,
+        trailing: <span class="class-name">Icon</span>(
+          task.isCompleted ? <span class="class-name">Icons</span>.check_circle : <span class="class-name">Icons</span>.circle_outlined,
+          color: task.isCompleted ? <span class="class-name">Colors</span>.green : <span class="class-name">Colors</span>.grey.shade400,
+        ),
+      ),
+    );
+  }
+}</code></pre>
+            </div>
+
+            <h3>แก้ไข TaskListScreen ให้ส่ง Key</h3>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-filename">lib/screens/task_list_screen.dart (ส่วน ListView)</span>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code><span class="comment">// ใน body ของ Scaffold</span>
+<span class="class-name">ListView</span>.<span class="function">builder</span>(
+  padding: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">symmetric</span>(vertical: <span class="number">8</span>),
+  itemCount: _tasks.length,
+  itemBuilder: (context, index) {
+    <span class="keyword">final</span> task = _tasks[index];
+    <span class="keyword">return</span> <span class="class-name">TaskItem</span>(
+      <span class="comment">// ✅ ใช้ ValueKey กับ task.id ที่ unique</span>
+      key: <span class="class-name">ValueKey</span>(task.id),
+      task: task,
+      onToggle: (value) => <span class="function">_toggleTask</span>(index, value),
+    );
+  },
+),</code></pre>
+            </div>
+
+            <div class="info-box tip">
+                <h4>💡 Best Practice</h4>
+                <p>
+                    ใช้ <code>ValueKey(task.id)</code> เมื่อ Task มี ID ที่ unique 
+                    ซึ่งเป็นวิธีที่ดีที่สุดเพราะ ID ไม่เปลี่ยนแปลงตลอดอายุของ Task
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 5: Demo Example -->
+        <section class="section">
+            <h2>🧪 5. ตัวอย่างทดสอบการทำงานของ Key</h2>
+
+            <p>
+                มาสร้างหน้าทดสอบที่แสดงให้เห็นความแตกต่างระหว่างการใช้และไม่ใช้ Key
+            </p>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-filename">lib/screens/key_demo_screen.dart</span>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><code><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="comment">/// หน้าทดสอบแสดงความแตกต่างระหว่างใช้และไม่ใช้ Key</span>
+<span class="keyword">class</span> <span class="class-name">KeyDemoScreen</span> <span class="keyword">extends</span> <span class="class-name">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class-name">KeyDemoScreen</span>({<span class="keyword">super</span>.key});
+
+  <span class="decorator">@override</span>
+  <span class="class-name">State</span>&lt;<span class="class-name">KeyDemoScreen</span>&gt; <span class="function">createState</span>() => <span class="class-name">_KeyDemoScreenState</span>();
+}
+
+<span class="keyword">class</span> <span class="class-name">_KeyDemoScreenState</span> <span class="keyword">extends</span> <span class="class-name">State</span>&lt;<span class="class-name">KeyDemoScreen</span>&gt; {
+  <span class="class-name">List</span>&lt;<span class="class-name">String</span>&gt; _items = [<span class="string">'🍎 Apple'</span>, <span class="string">'🍌 Banana'</span>, <span class="string">'🍊 Orange'</span>];
+  <span class="keyword">bool</span> _useKey = <span class="keyword">false</span>;
+
+  <span class="keyword">void</span> <span class="function">_shuffle</span>() {
+    <span class="function">setState</span>(() {
+      _items = <span class="class-name">List</span>.<span class="function">from</span>(_items)..shuffle();
+    });
+  }
+
+  <span class="keyword">void</span> <span class="function">_removeFirst</span>() {
+    <span class="keyword">if</span> (_items.isNotEmpty) {
+      <span class="function">setState</span>(() {
+        _items = <span class="class-name">List</span>.<span class="function">from</span>(_items)..<span class="function">removeAt</span>(<span class="number">0</span>);
+      });
+    }
+  }
+
+  <span class="keyword">void</span> <span class="function">_reset</span>() {
+    <span class="function">setState</span>(() {
+      _items = [<span class="string">'🍎 Apple'</span>, <span class="string">'🍌 Banana'</span>, <span class="string">'🍊 Orange'</span>];
+    });
+  }
+
+  <span class="decorator">@override</span>
+  <span class="class-name">Widget</span> <span class="function">build</span>(<span class="class-name">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class-name">Scaffold</span>(
+      appBar: <span class="class-name">AppBar</span>(
+        title: <span class="keyword">const</span> <span class="class-name">Text</span>(<span class="string">'Key Demo'</span>),
+        actions: [
+          <span class="class-name">Row</span>(
+            children: [
+              <span class="keyword">const</span> <span class="class-name">Text</span>(<span class="string">'Use Key'</span>),
+              <span class="class-name">Switch</span>(
+                value: _useKey,
+                onChanged: (value) => <span class="function">setState</span>(() => _useKey = value),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: <span class="class-name">Column</span>(
+        children: [
+          <span class="class-name">Padding</span>(
+            padding: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+            child: <span class="class-name">Text</span>(
+              _useKey ? <span class="string">'✅ ใช้ Key'</span> : <span class="string">'❌ ไม่ใช้ Key'</span>,
+              style: <span class="class-name">Theme</span>.<span class="function">of</span>(context).textTheme.headlineSmall,
+            ),
+          ),
+          <span class="class-name">Expanded</span>(
+            child: <span class="class-name">ListView</span>.<span class="function">builder</span>(
+              itemCount: _items.length,
+              itemBuilder: (context, index) {
+                <span class="keyword">final</span> item = _items[index];
+                <span class="keyword">return</span> <span class="class-name">ColorfulTile</span>(
+                  <span class="comment">// ⭐ Toggle ระหว่างใช้และไม่ใช้ Key</span>
+                  key: _useKey ? <span class="class-name">ValueKey</span>(item) : <span class="keyword">null</span>,
+                  title: item,
+                );
+              },
+            ),
+          ),
+          <span class="class-name">Padding</span>(
+            padding: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+            child: <span class="class-name">Row</span>(
+              mainAxisAlignment: <span class="class-name">MainAxisAlignment</span>.spaceEvenly,
+              children: [
+                <span class="class-name">ElevatedButton</span>.<span class="function">icon</span>(
+                  onPressed: _shuffle,
+                  icon: <span class="keyword">const</span> <span class="class-name">Icon</span>(<span class="class-name">Icons</span>.shuffle),
+                  label: <span class="keyword">const</span> <span class="class-name">Text</span>(<span class="string">'สลับ'</span>),
+                ),
+                <span class="class-name">ElevatedButton</span>.<span class="function">icon</span>(
+                  onPressed: _removeFirst,
+                  icon: <span class="keyword">const</span> <span class="class-name">Icon</span>(<span class="class-name">Icons</span>.remove),
+                  label: <span class="keyword">const</span> <span class="class-name">Text</span>(<span class="string">'ลบแรก'</span>),
+                ),
+                <span class="class-name">ElevatedButton</span>.<span class="function">icon</span>(
+                  onPressed: _reset,
+                  icon: <span class="keyword">const</span> <span class="class-name">Icon</span>(<span class="class-name">Icons</span>.refresh),
+                  label: <span class="keyword">const</span> <span class="class-name">Text</span>(<span class="string">'Reset'</span>),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+<span class="comment">/// Tile ที่มี StatefulWidget เก็บสีแบบสุ่ม</span>
+<span class="keyword">class</span> <span class="class-name">ColorfulTile</span> <span class="keyword">extends</span> <span class="class-name">StatefulWidget</span> {
+  <span class="keyword">final</span> <span class="class-name">String</span> title;
+
+  <span class="keyword">const</span> <span class="class-name">ColorfulTile</span>({<span class="keyword">super</span>.key, <span class="keyword">required</span> <span class="keyword">this</span>.title});
+
+  <span class="decorator">@override</span>
+  <span class="class-name">State</span>&lt;<span class="class-name">ColorfulTile</span>&gt; <span class="function">createState</span>() => <span class="class-name">_ColorfulTileState</span>();
+}
+
+<span class="keyword">class</span> <span class="class-name">_ColorfulTileState</span> <span class="keyword">extends</span> <span class="class-name">State</span>&lt;<span class="class-name">ColorfulTile</span>&gt; {
+  <span class="comment">// 🎨 สีที่สุ่มตอน initState - เก็บใน State</span>
+  <span class="keyword">late</span> <span class="class-name">Color</span> _color;
+
+  <span class="decorator">@override</span>
+  <span class="keyword">void</span> <span class="function">initState</span>() {
+    <span class="keyword">super</span>.<span class="function">initState</span>();
+    <span class="comment">// สุ่มสีเมื่อสร้าง State ใหม่</span>
+    _color = <span class="class-name">Colors</span>.primaries[<span class="class-name">DateTime</span>.<span class="function">now</span>().microsecond % <span class="class-name">Colors</span>.primaries.length];
+    <span class="function">print</span>(<span class="string">'initState: </span><span class="property">${widget.title}</span><span class="string"> -> </span><span class="property">$_color</span><span class="string">'</span>);
+  }
+
+  <span class="decorator">@override</span>
+  <span class="class-name">Widget</span> <span class="function">build</span>(<span class="class-name">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class-name">Card</span>(
+      margin: <span class="keyword">const</span> <span class="class-name">EdgeInsets</span>.<span class="function">all</span>(<span class="number">8</span>),
+      color: _color.withOpacity(<span class="number">0.3</span>),
+      child: <span class="class-name">ListTile</span>(
+        leading: <span class="class-name">CircleAvatar</span>(
+          backgroundColor: _color,
+          child: <span class="class-name">Text</span>(widget.title[<span class="number">0</span>]),
+        ),
+        title: <span class="class-name">Text</span>(widget.title),
+        subtitle: <span class="class-name">Text</span>(<span class="string">'Color: </span><span class="property">${_color.toString().substring(6, 16)}</span><span class="string">'</span>),
+      ),
+    );
+  }
+}</code></pre>
+            </div>
+
+            <div class="info-box warning">
+                <h4>🔍 สิ่งที่ควรสังเกต</h4>
+                <p>
+                    เมื่อ <strong>ไม่ใช้ Key</strong>: สังเกตว่าสีจะไม่ตรงกับ item เมื่อสลับตำแหน่ง<br>
+                    เมื่อ <strong>ใช้ Key</strong>: สีจะติดตามไปกับ item อย่างถูกต้อง
+                </p>
+            </div>
+        </section>
+
+        <!-- Section 6: When to Use -->
+        <section class="section">
+            <h2>📐 6. เมื่อไหร่ควรใช้ Key?</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>สถานการณ์</th>
+                        <th>ต้องใช้ Key?</th>
+                        <th>เหตุผล</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>รายการที่ลบได้</td>
+                        <td>✅ ใช่</td>
+                        <td>ป้องกัน State สับสน</td>
+                    </tr>
+                    <tr>
+                        <td>รายการที่สลับตำแหน่งได้</td>
+                        <td>✅ ใช่</td>
+                        <td>ให้ Flutter ติดตาม Widget ถูกต้อง</td>
+                    </tr>
+                    <tr>
+                        <td>Item มี StatefulWidget ภายใน</td>
+                        <td>✅ ใช่</td>
+                        <td>รักษา State ของแต่ละ item</td>
+                    </tr>
+                    <tr>
+                        <td>รายการคงที่ไม่เปลี่ยน</td>
+                        <td>❌ ไม่จำเป็น</td>
+                        <td>index เพียงพอ</td>
+                    </tr>
+                    <tr>
+                        <td>Item เป็น StatelessWidget ธรรมดา</td>
+                        <td>⚪ แนะนำ</td>
+                        <td>ช่วย performance</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <h4>💡 กฎง่ายๆ</h4>
+                <p>
+                    <strong>"ถ้ารายการมีการเปลี่ยนแปลง (เพิ่ม/ลบ/สลับ) → ใช้ Key เสมอ"</strong>
+                </p>
+            </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="section">
+            <h2>📝 สรุป</h2>
+            
+            <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-top: 1rem;">
+                <li style="margin-bottom: 0.5rem;"><code>Key</code> ช่วยให้ Flutter ระบุตัวตน Widget ได้ถูกต้อง</li>
+                <li style="margin-bottom: 0.5rem;">ใช้ <code>ValueKey</code> เมื่อมี unique identifier</li>
+                <li style="margin-bottom: 0.5rem;">ใช้ <code>ObjectKey</code> เมื่อต้องการใช้ object ทั้งตัว</li>
+                <li style="margin-bottom: 0.5rem;">จำเป็นต้องใช้ Key เมื่อมีการลบ/สลับ item ในรายการ</li>
+                <li style="margin-bottom: 0.5rem;">Key สำคัญมากเมื่อ item มี StatefulWidget ภายใน</li>
+            </ul>
+
+            <div class="info-box note">
+                <h4>🔜 ถัดไป: Part 3 - Dismissible</h4>
+                <p>
+                    ใน Part ถัดไป เราจะเพิ่มความสามารถลบ Task ด้วยการ Swipe 
+                    โดยใช้ Dismissible widget ซึ่งจะเห็นความสำคัญของ Key ชัดเจนยิ่งขึ้น!
+                </p>
+            </div>
+        </section>
+
+        <nav class="nav-footer">
+            <a href="part1-listview-basics.html" class="nav-btn">
+                <span>←</span>
+                <div>
+                    <div class="nav-btn-label">ก่อนหน้า</div>
+                    <div class="nav-btn-title">Part 1: พื้นฐาน ListView</div>
+                </div>
+            </a>
+            <a href="part3-dismissible.html" class="nav-btn next">
+                <div>
+                    <div class="nav-btn-label">ถัดไป</div>
+                    <div class="nav-btn-title">Part 3: Dismissible</div>
+                </div>
+                <span>→</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-container').querySelector('pre code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!`;
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy`;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 3: Dismissible Widget | Flutter Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-code: #0d1117;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+            --code-comment: #8b949e;
+            --code-keyword: #ff7b72;
+            --code-string: #a5d6ff;
+            --code-function: #d2a8ff;
+            --code-class: #7ee787;
+            --code-number: #79c0ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans Thai', 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(249, 115, 22, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
+        }
+
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-brand svg { color: var(--accent-orange); }
+        .nav-brand span { font-family: 'Outfit', sans-serif; font-weight: 600; }
+
+        .nav-links { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(239, 68, 68, 0.2));
+            color: var(--accent-orange);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .part-header { margin-bottom: 3rem; }
+
+        .part-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.05));
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: var(--accent-orange);
+            margin-bottom: 1rem;
+        }
+
+        .part-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .part-description { color: var(--text-secondary); font-size: 1.1rem; max-width: 600px; }
+
+        .objectives {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .objectives h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            color: var(--accent-green);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .objectives ul { list-style: none; }
+
+        .objectives li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .objectives li::before {
+            content: "○";
+            color: var(--accent-orange);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .section { margin-bottom: 4rem; }
+
+        .section h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h2 .icon { color: var(--accent-orange); }
+
+        .section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent-orange);
+        }
+
+        p { margin-bottom: 1rem; color: var(--text-secondary); }
+        p strong { color: var(--text-primary); }
+
+        .code-block {
+            position: relative;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-file {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .code-file svg { color: var(--accent-orange); }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-color: var(--accent-orange);
+        }
+
+        .copy-btn.copied {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .code-content {
+            padding: 1.25rem;
+            overflow-x: auto;
+        }
+
+        .code-content pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #e6edf3;
+        }
+
+        .code-content .keyword { color: var(--code-keyword); }
+        .code-content .string { color: var(--code-string); }
+        .code-content .function { color: var(--code-function); }
+        .code-content .class { color: var(--code-class); }
+        .code-content .comment { color: var(--code-comment); font-style: italic; }
+        .code-content .number { color: var(--code-number); }
+        .code-content .annotation { color: var(--accent-orange); }
+
+        .info-box {
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            border: 1px solid;
+        }
+
+        .info-box.tip {
+            background: rgba(34, 197, 94, 0.05);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .info-box.tip .info-title { color: var(--accent-green); }
+
+        .info-box.warning {
+            background: rgba(234, 179, 8, 0.05);
+            border-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .info-box.warning .info-title { color: var(--accent-yellow); }
+
+        .info-box.danger {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .info-box.danger .info-title { color: var(--accent-red); }
+
+        .info-box.note {
+            background: rgba(0, 212, 255, 0.05);
+            border-color: rgba(0, 212, 255, 0.2);
+        }
+
+        .info-box.note .info-title { color: var(--accent-blue); }
+
+        .info-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-content { color: var(--text-secondary); }
+
+        .diagram-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--accent-orange);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        .comparison-table td { color: var(--text-secondary); }
+        .comparison-table tr:last-child td { border-bottom: none; }
+
+        .step-list { margin: 1.5rem 0; }
+
+        .step-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .step-item:hover { border-color: var(--accent-orange); }
+
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p { margin-bottom: 0; font-size: 0.95rem; }
+
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.prev {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .nav-btn.prev:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateX(4px);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-code);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--accent-orange);
+        }
+
+        .property-list {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .property-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: border-color 0.2s;
+        }
+
+        .property-item:hover { border-color: var(--accent-orange); }
+
+        .property-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-green);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-type {
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            margin-left: 0.5rem;
+        }
+
+        .property-desc { color: var(--text-secondary); font-size: 0.95rem; margin: 0; }
+
+        .swipe-demo {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .swipe-demo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin: 1rem auto;
+            max-width: 400px;
+            position: relative;
+            overflow: hidden;
+            animation: swipeHint 3s ease-in-out infinite;
+        }
+
+        @keyframes swipeHint {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-20px); }
+            50% { transform: translateX(0); }
+            75% { transform: translateX(20px); }
+        }
+
+        .swipe-demo-bg {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            font-weight: 600;
+        }
+
+        .swipe-demo-bg.left {
+            left: 0;
+            background: linear-gradient(90deg, var(--accent-green), transparent);
+            color: var(--accent-green);
+        }
+
+        .swipe-demo-bg.right {
+            right: 0;
+            background: linear-gradient(270deg, var(--accent-red), transparent);
+            color: var(--accent-red);
+        }
+
+        @media (max-width: 768px) {
+            .nav-content { flex-direction: column; gap: 1rem; }
+            .nav-links { justify-content: center; }
+            .part-header h1 { font-size: 2rem; }
+            .container { padding: 2rem 1rem; }
+            .nav-footer { flex-direction: column; }
+            .nav-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span>Flutter Lab</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">หน้าแรก</a>
+                <a href="part1-listview-basics.html" class="nav-link">Part 1</a>
+                <a href="part2-understanding-key.html" class="nav-link">Part 2</a>
+                <a href="part3-dismissible-widget.html" class="nav-link active">Part 3</a>
+                <a href="part4-reorderable-listview.html" class="nav-link">Part 4</a>
+                <a href="part5-advanced-task-manager.html" class="nav-link">Part 5</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="part-header">
+            <div class="part-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Part 3 of 5
+            </div>
+            <h1>Dismissible Widget</h1>
+            <p class="part-description">
+                เรียนรู้การสร้าง Swipe-to-Delete และ Swipe Actions ด้วย Dismissible Widget พร้อม Animation และ Confirmation Dialog
+            </p>
+        </header>
+
+        <div class="objectives">
+            <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                สิ่งที่คุณจะได้เรียนรู้
+            </h3>
+            <ul>
+                <li>เข้าใจหลักการทำงานของ Dismissible Widget</li>
+                <li>สร้าง Swipe-to-Delete ด้วย Animation ที่สวยงาม</li>
+                <li>ใช้ background และ secondaryBackground สำหรับ Swipe ทั้งสองทิศทาง</li>
+                <li>สร้าง Confirmation Dialog ก่อนลบข้อมูล</li>
+                <li>เข้าใจความสำคัญของ Key ใน Dismissible</li>
+                <li>จัดการ onDismissed และ confirmDismiss callbacks</li>
+            </ul>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <section class="section">
+            <h2><span class="icon">📱</span> Dismissible คืออะไร?</h2>
+            
+            <p>
+                <strong>Dismissible</strong> เป็น Widget ที่ช่วยให้ผู้ใช้สามารถ "ปัด" (Swipe) เพื่อลบหรือดำเนินการกับรายการได้ 
+                เป็นรูปแบบ UX ที่พบได้บ่อยในแอป เช่น การลบอีเมล ลบ notification หรือลบรายการ todo
+            </p>
+
+            <div class="swipe-demo">
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">ตัวอย่าง Swipe Gesture</p>
+                <div class="swipe-demo-item">
+                    <span>📝 Task Item</span>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">← ปัดเพื่อลบ →</span>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart LR
+    A[User Swipe] --> B{Direction?}
+    B -->|Left| C[Show Delete Background]
+    B -->|Right| D[Show Archive Background]
+    C --> E[confirmDismiss]
+    D --> E
+    E -->|true| F[onDismissed]
+    E -->|false| G[Return to Original]
+    F --> H[Remove from List]
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Basic Structure -->
+        <section class="section">
+            <h2><span class="icon">🏗️</span> โครงสร้างพื้นฐาน</h2>
+
+            <p>
+                Dismissible มี property หลักๆ ที่ต้องรู้จัก ดังนี้:
+            </p>
+
+            <div class="property-list">
+                <div class="property-item">
+                    <div class="property-name">key <span class="property-type">Key (required)</span></div>
+                    <p class="property-desc">Key ที่ไม่ซ้ำกันสำหรับแต่ละ item - <strong>จำเป็นมาก!</strong> ถ้าไม่ใส่จะเกิด State mismatch</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">child <span class="property-type">Widget (required)</span></div>
+                    <p class="property-desc">Widget ที่จะถูก wrap ด้วย Dismissible</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">background <span class="property-type">Widget?</span></div>
+                    <p class="property-desc">Background ที่แสดงเมื่อ swipe จากซ้ายไปขวา</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">secondaryBackground <span class="property-type">Widget?</span></div>
+                    <p class="property-desc">Background ที่แสดงเมื่อ swipe จากขวาไปซ้าย</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">onDismissed <span class="property-type">Function(DismissDirection)?</span></div>
+                    <p class="property-desc">Callback ที่เรียกหลังจาก dismiss สำเร็จ - ใช้สำหรับลบข้อมูลจาก list</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">confirmDismiss <span class="property-type">Future&lt;bool?&gt; Function(DismissDirection)?</span></div>
+                    <p class="property-desc">Callback สำหรับยืนยันก่อน dismiss - return true เพื่อ dismiss, false เพื่อยกเลิก</p>
+                </div>
+                <div class="property-item">
+                    <div class="property-name">direction <span class="property-type">DismissDirection</span></div>
+                    <p class="property-desc">กำหนดทิศทางที่อนุญาตให้ swipe (default: horizontal)</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    สำคัญมาก: Key คือหัวใจของ Dismissible
+                </div>
+                <div class="info-content">
+                    Dismissible <strong>ต้องมี Key เสมอ</strong> เพราะ Flutter ใช้ Key ในการติดตามว่า Widget ไหนถูกลบ 
+                    ถ้าไม่มี Key อาจทำให้ Widget ผิดตัวถูก dismiss หรือ Animation ผิดพลาด
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Basic Dismissible -->
+        <section class="section">
+            <h2><span class="icon">🎯</span> สร้าง Dismissible พื้นฐาน</h2>
+
+            <p>
+                เริ่มจากการสร้าง Dismissible แบบง่ายๆ ที่สามารถ swipe เพื่อลบได้:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/basic_dismissible_example.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">BasicDismissibleExample</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">BasicDismissibleExample</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">BasicDismissibleExample</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_BasicDismissibleExampleState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_BasicDismissibleExampleState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">BasicDismissibleExample</span>&gt; {
+  <span class="comment">// รายการ items - ใช้ unique ID</span>
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Map</span>&lt;<span class="class">String</span>, <span class="keyword">dynamic</span>&gt;&gt; _items = [
+    {<span class="string">'id'</span>: <span class="string">'1'</span>, <span class="string">'title'</span>: <span class="string">'เรียน Flutter'</span>},
+    {<span class="string">'id'</span>: <span class="string">'2'</span>, <span class="string">'title'</span>: <span class="string">'ทำ Lab Dismissible'</span>},
+    {<span class="string">'id'</span>: <span class="string">'3'</span>, <span class="string">'title'</span>: <span class="string">'อ่านเอกสาร Key'</span>},
+    {<span class="string">'id'</span>: <span class="string">'4'</span>, <span class="string">'title'</span>: <span class="string">'ฝึก Drag and Drop'</span>},
+  ];
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Basic Dismissible'</span>)),
+      body: <span class="class">ListView</span>.<span class="function">builder</span>(
+        itemCount: _items.length,
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> item = _items[index];
+          
+          <span class="keyword">return</span> <span class="class">Dismissible</span>(
+            <span class="comment">// Key ต้องไม่ซ้ำกัน - ใช้ ID ของ item</span>
+            key: <span class="class">ValueKey</span>(item[<span class="string">'id'</span>]),
+            
+            <span class="comment">// Background เมื่อ swipe (แสดงสีแดงและไอคอนลบ)</span>
+            background: <span class="class">Container</span>(
+              color: <span class="class">Colors</span>.red,
+              alignment: <span class="class">Alignment</span>.centerLeft,
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(left: <span class="number">20</span>),
+              child: <span class="keyword">const</span> <span class="class">Icon</span>(
+                <span class="class">Icons</span>.delete,
+                color: <span class="class">Colors</span>.white,
+              ),
+            ),
+            
+            <span class="comment">// เมื่อ dismiss สำเร็จ - ลบออกจาก list</span>
+            onDismissed: (direction) {
+              <span class="function">setState</span>(() {
+                _items.<span class="function">removeAt</span>(index);
+              });
+              
+              <span class="comment">// แสดง SnackBar บอกผู้ใช้</span>
+              <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">showSnackBar</span>(
+                <span class="class">SnackBar</span>(
+                  content: <span class="class">Text</span>(<span class="string">'ลบ "${item['title']}" แล้ว'</span>),
+                  action: <span class="class">SnackBarAction</span>(
+                    label: <span class="string">'Undo'</span>,
+                    onPressed: () {
+                      <span class="comment">// TODO: Implement undo</span>
+                    },
+                  ),
+                ),
+              );
+            },
+            
+            <span class="comment">// Child คือ Widget ที่จะแสดง</span>
+            child: <span class="class">Card</span>(
+              margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">symmetric</span>(
+                horizontal: <span class="number">16</span>,
+                vertical: <span class="number">8</span>,
+              ),
+              child: <span class="class">ListTile</span>(
+                leading: <span class="class">CircleAvatar</span>(
+                  child: <span class="class">Text</span>(<span class="string">'${index + 1}'</span>),
+                ),
+                title: <span class="class">Text</span>(item[<span class="string">'title'</span>]),
+                subtitle: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'ปัดไปทางซ้ายเพื่อลบ'</span>),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="info-box tip">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    ทำไมต้อง removeAt ก่อน?
+                </div>
+                <div class="info-content">
+                    เมื่อ <code>onDismissed</code> ถูกเรียก Widget จะถูกลบออกจาก tree แล้ว 
+                    เราต้อง sync ข้อมูลใน list ให้ตรงกับ UI ดังนั้นต้อง <code>removeAt</code> ทันที 
+                    ไม่งั้นจะเกิด error เมื่อ Flutter พยายาม rebuild
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Two-way Swipe -->
+        <section class="section">
+            <h2><span class="icon">↔️</span> Swipe ได้ทั้งสองทิศทาง</h2>
+
+            <p>
+                ในแอปจริง เรามักต้องการให้ผู้ใช้ swipe ได้ทั้งซ้ายและขวา โดยแต่ละทิศทางทำ action ต่างกัน 
+                เช่น swipe ขวาเพื่อ archive, swipe ซ้ายเพื่อ delete
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid">
+flowchart TB
+    subgraph Left["← Swipe Left"]
+        L1[secondaryBackground แสดง]
+        L2[Delete Action]
+        style L1 fill:#ef4444,color:#fff
+        style L2 fill:#ef4444,color:#fff
+    end
+    
+    subgraph Right["Swipe Right →"]
+        R1[background แสดง]
+        R2[Archive Action]
+        style R1 fill:#22c55e,color:#fff
+        style R2 fill:#22c55e,color:#fff
+    end
+    
+    Center[Item Widget]
+    
+    Center -->|"swipe →"| Right
+    Center -->|"← swipe"| Left
+                </div>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/two_way_dismissible.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">TwoWayDismissible</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">TwoWayDismissible</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">TwoWayDismissible</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_TwoWayDismissibleState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_TwoWayDismissibleState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">TwoWayDismissible</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Map</span>&lt;<span class="class">String</span>, <span class="keyword">dynamic</span>&gt;&gt; _emails = [
+    {<span class="string">'id'</span>: <span class="string">'1'</span>, <span class="string">'from'</span>: <span class="string">'boss@company.com'</span>, <span class="string">'subject'</span>: <span class="string">'ประชุมพรุ่งนี้'</span>},
+    {<span class="string">'id'</span>: <span class="string">'2'</span>, <span class="string">'from'</span>: <span class="string">'hr@company.com'</span>, <span class="string">'subject'</span>: <span class="string">'วันหยุดประจำปี'</span>},
+    {<span class="string">'id'</span>: <span class="string">'3'</span>, <span class="string">'from'</span>: <span class="string">'promo@shop.com'</span>, <span class="string">'subject'</span>: <span class="string">'ลดราคา 50%!'</span>},
+  ];
+
+  <span class="keyword">void</span> <span class="function">_handleDismiss</span>(<span class="class">DismissDirection</span> direction, <span class="keyword">int</span> index) {
+    <span class="keyword">final</span> email = _emails[index];
+    <span class="keyword">final</span> action = direction == <span class="class">DismissDirection</span>.startToEnd 
+        ? <span class="string">'Archive'</span> 
+        : <span class="string">'Delete'</span>;
+    
+    <span class="function">setState</span>(() {
+      _emails.<span class="function">removeAt</span>(index);
+    });
+    
+    <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">showSnackBar</span>(
+      <span class="class">SnackBar</span>(
+        content: <span class="class">Text</span>(<span class="string">'$action: ${email['subject']}'</span>),
+        backgroundColor: direction == <span class="class">DismissDirection</span>.startToEnd
+            ? <span class="class">Colors</span>.green
+            : <span class="class">Colors</span>.red,
+      ),
+    );
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Email Inbox'</span>)),
+      body: <span class="class">ListView</span>.<span class="function">builder</span>(
+        itemCount: _emails.length,
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> email = _emails[index];
+          
+          <span class="keyword">return</span> <span class="class">Dismissible</span>(
+            key: <span class="class">ValueKey</span>(email[<span class="string">'id'</span>]),
+            
+            <span class="comment">// Background สำหรับ Swipe ขวา → (Archive)</span>
+            background: <span class="class">Container</span>(
+              color: <span class="class">Colors</span>.green,
+              alignment: <span class="class">Alignment</span>.centerLeft,
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(left: <span class="number">20</span>),
+              child: <span class="keyword">const</span> <span class="class">Row</span>(
+                children: [
+                  <span class="class">Icon</span>(<span class="class">Icons</span>.archive, color: <span class="class">Colors</span>.white),
+                  <span class="class">SizedBox</span>(width: <span class="number">8</span>),
+                  <span class="class">Text</span>(<span class="string">'Archive'</span>, style: <span class="class">TextStyle</span>(color: <span class="class">Colors</span>.white, fontWeight: <span class="class">FontWeight</span>.bold)),
+                ],
+              ),
+            ),
+            
+            <span class="comment">// Secondary Background สำหรับ Swipe ซ้าย ← (Delete)</span>
+            secondaryBackground: <span class="class">Container</span>(
+              color: <span class="class">Colors</span>.red,
+              alignment: <span class="class">Alignment</span>.centerRight,
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(right: <span class="number">20</span>),
+              child: <span class="keyword">const</span> <span class="class">Row</span>(
+                mainAxisAlignment: <span class="class">MainAxisAlignment</span>.end,
+                children: [
+                  <span class="class">Text</span>(<span class="string">'Delete'</span>, style: <span class="class">TextStyle</span>(color: <span class="class">Colors</span>.white, fontWeight: <span class="class">FontWeight</span>.bold)),
+                  <span class="class">SizedBox</span>(width: <span class="number">8</span>),
+                  <span class="class">Icon</span>(<span class="class">Icons</span>.delete, color: <span class="class">Colors</span>.white),
+                ],
+              ),
+            ),
+            
+            onDismissed: (direction) =&gt; <span class="function">_handleDismiss</span>(direction, index),
+            
+            child: <span class="class">Card</span>(
+              margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">symmetric</span>(horizontal: <span class="number">16</span>, vertical: <span class="number">4</span>),
+              child: <span class="class">ListTile</span>(
+                leading: <span class="keyword">const</span> <span class="class">CircleAvatar</span>(child: <span class="class">Icon</span>(<span class="class">Icons</span>.email)),
+                title: <span class="class">Text</span>(email[<span class="string">'subject'</span>]),
+                subtitle: <span class="class">Text</span>(email[<span class="string">'from'</span>]),
+                trailing: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.chevron_right),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>ทิศทาง Swipe</th>
+                        <th>DismissDirection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>background</code></td>
+                        <td>→ จากซ้ายไปขวา (Start to End)</td>
+                        <td><code>DismissDirection.startToEnd</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>secondaryBackground</code></td>
+                        <td>← จากขวาไปซ้าย (End to Start)</td>
+                        <td><code>DismissDirection.endToStart</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 5: Confirmation Dialog -->
+        <section class="section">
+            <h2><span class="icon">❓</span> Confirmation Dialog</h2>
+
+            <p>
+                การลบข้อมูลโดยไม่ถามยืนยันก่อนอาจทำให้ผู้ใช้เสียข้อมูลสำคัญ 
+                เราสามารถใช้ <code>confirmDismiss</code> เพื่อถามยืนยันก่อน dismiss ได้
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/dismissible_with_confirm.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">DismissibleWithConfirm</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">DismissibleWithConfirm</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">DismissibleWithConfirm</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_DismissibleWithConfirmState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_DismissibleWithConfirmState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">DismissibleWithConfirm</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Map</span>&lt;<span class="class">String</span>, <span class="keyword">dynamic</span>&gt;&gt; _tasks = [
+    {<span class="string">'id'</span>: <span class="string">'1'</span>, <span class="string">'title'</span>: <span class="string">'งานสำคัญมาก'</span>, <span class="string">'important'</span>: <span class="keyword">true</span>},
+    {<span class="string">'id'</span>: <span class="string">'2'</span>, <span class="string">'title'</span>: <span class="string">'งานทั่วไป'</span>, <span class="string">'important'</span>: <span class="keyword">false</span>},
+    {<span class="string">'id'</span>: <span class="string">'3'</span>, <span class="string">'title'</span>: <span class="string">'ส่งรายงาน'</span>, <span class="string">'important'</span>: <span class="keyword">true</span>},
+  ];
+
+  <span class="comment">// แสดง Dialog ยืนยันการลบ</span>
+  <span class="class">Future</span>&lt;<span class="keyword">bool</span>?&gt; <span class="function">_showDeleteConfirmation</span>(<span class="class">BuildContext</span> context, <span class="class">String</span> title) {
+    <span class="keyword">return</span> <span class="function">showDialog</span>&lt;<span class="keyword">bool</span>&gt;(
+      context: context,
+      builder: (context) =&gt; <span class="class">AlertDialog</span>(
+        title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'ยืนยันการลบ'</span>),
+        content: <span class="class">Text</span>(<span class="string">'คุณต้องการลบ "$title" หรือไม่?'</span>),
+        actions: [
+          <span class="class">TextButton</span>(
+            onPressed: () =&gt; <span class="class">Navigator</span>.<span class="function">of</span>(context).<span class="function">pop</span>(<span class="keyword">false</span>),
+            child: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'ยกเลิก'</span>),
+          ),
+          <span class="class">FilledButton</span>(
+            onPressed: () =&gt; <span class="class">Navigator</span>.<span class="function">of</span>(context).<span class="function">pop</span>(<span class="keyword">true</span>),
+            style: <span class="class">FilledButton</span>.<span class="function">styleFrom</span>(
+              backgroundColor: <span class="class">Colors</span>.red,
+            ),
+            child: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'ลบ'</span>),
+          ),
+        ],
+      ),
+    );
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Dismissible with Confirm'</span>)),
+      body: <span class="class">ListView</span>.<span class="function">builder</span>(
+        itemCount: _tasks.length,
+        itemBuilder: (context, index) {
+          <span class="keyword">final</span> task = _tasks[index];
+          
+          <span class="keyword">return</span> <span class="class">Dismissible</span>(
+            key: <span class="class">ValueKey</span>(task[<span class="string">'id'</span>]),
+            
+            <span class="comment">// จำกัดให้ swipe ได้เฉพาะทางซ้าย (ลบ)</span>
+            direction: <span class="class">DismissDirection</span>.endToStart,
+            
+            background: <span class="class">Container</span>(
+              color: <span class="class">Colors</span>.red,
+              alignment: <span class="class">Alignment</span>.centerRight,
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(right: <span class="number">20</span>),
+              child: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.delete, color: <span class="class">Colors</span>.white, size: <span class="number">32</span>),
+            ),
+            
+            <span class="comment">// confirmDismiss - return true เพื่อลบ, false เพื่อยกเลิก</span>
+            confirmDismiss: (direction) <span class="keyword">async</span> {
+              <span class="comment">// ถ้าเป็นงานสำคัญ ต้องถามยืนยันก่อน</span>
+              <span class="keyword">if</span> (task[<span class="string">'important'</span>] == <span class="keyword">true</span>) {
+                <span class="keyword">return</span> <span class="keyword">await</span> <span class="function">_showDeleteConfirmation</span>(context, task[<span class="string">'title'</span>]);
+              }
+              <span class="comment">// งานทั่วไปลบได้เลย</span>
+              <span class="keyword">return</span> <span class="keyword">true</span>;
+            },
+            
+            onDismissed: (direction) {
+              <span class="function">setState</span>(() {
+                _tasks.<span class="function">removeAt</span>(index);
+              });
+              <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">showSnackBar</span>(
+                <span class="class">SnackBar</span>(content: <span class="class">Text</span>(<span class="string">'ลบ "${task['title']}" แล้ว'</span>)),
+              );
+            },
+            
+            child: <span class="class">Card</span>(
+              margin: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">8</span>),
+              child: <span class="class">ListTile</span>(
+                leading: <span class="class">Icon</span>(
+                  task[<span class="string">'important'</span>] ? <span class="class">Icons</span>.star : <span class="class">Icons</span>.star_border,
+                  color: task[<span class="string">'important'</span>] ? <span class="class">Colors</span>.orange : <span class="class">Colors</span>.grey,
+                ),
+                title: <span class="class">Text</span>(task[<span class="string">'title'</span>]),
+                subtitle: <span class="class">Text</span>(
+                  task[<span class="string">'important'</span>] ? <span class="string">'งานสำคัญ - ต้องยืนยันก่อนลบ'</span> : <span class="string">'ปัดเพื่อลบ'</span>,
+                  style: <span class="class">TextStyle</span>(
+                    color: task[<span class="string">'important'</span>] ? <span class="class">Colors</span>.orange : <span class="class">Colors</span>.grey,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    confirmDismiss vs onDismissed
+                </div>
+                <div class="info-content">
+                    <strong>confirmDismiss:</strong> เรียกก่อน dismiss - return true/false เพื่อตัดสินใจว่าจะ dismiss หรือไม่<br>
+                    <strong>onDismissed:</strong> เรียกหลังจาก dismiss สำเร็จแล้ว - ใช้สำหรับ update data
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Custom Animation -->
+        <section class="section">
+            <h2><span class="icon">✨</span> Custom Swipe Animation</h2>
+
+            <p>
+                เราสามารถสร้าง background ที่มี animation สวยงามมากขึ้นได้ โดยใช้ <code>AnimatedBuilder</code> 
+                หรือสร้าง custom widget:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/widgets/swipe_background.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+
+<span class="comment">/// Custom Background Widget สำหรับ Dismissible</span>
+<span class="keyword">class</span> <span class="class">SwipeBackground</span> <span class="keyword">extends</span> <span class="class">StatelessWidget</span> {
+  <span class="keyword">final</span> <span class="class">Color</span> color;
+  <span class="keyword">final</span> <span class="class">IconData</span> icon;
+  <span class="keyword">final</span> <span class="class">String</span> label;
+  <span class="keyword">final</span> <span class="class">Alignment</span> alignment;
+
+  <span class="keyword">const</span> <span class="class">SwipeBackground</span>({
+    <span class="keyword">super</span>.key,
+    <span class="keyword">required</span> <span class="keyword">this</span>.color,
+    <span class="keyword">required</span> <span class="keyword">this</span>.icon,
+    <span class="keyword">required</span> <span class="keyword">this</span>.label,
+    <span class="keyword">this</span>.alignment = <span class="class">Alignment</span>.centerLeft,
+  });
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">final</span> isLeft = alignment == <span class="class">Alignment</span>.centerLeft;
+    
+    <span class="keyword">return</span> <span class="class">Container</span>(
+      decoration: <span class="class">BoxDecoration</span>(
+        gradient: <span class="class">LinearGradient</span>(
+          colors: [
+            color.<span class="function">withOpacity</span>(<span class="number">0.8</span>),
+            color,
+          ],
+          begin: isLeft ? <span class="class">Alignment</span>.centerLeft : <span class="class">Alignment</span>.centerRight,
+          end: isLeft ? <span class="class">Alignment</span>.centerRight : <span class="class">Alignment</span>.centerLeft,
+        ),
+      ),
+      alignment: alignment,
+      padding: <span class="class">EdgeInsets</span>.<span class="function">only</span>(
+        left: isLeft ? <span class="number">24</span> : <span class="number">0</span>,
+        right: isLeft ? <span class="number">0</span> : <span class="number">24</span>,
+      ),
+      child: <span class="class">Row</span>(
+        mainAxisSize: <span class="class">MainAxisSize</span>.min,
+        children: [
+          <span class="keyword">if</span> (isLeft) ...[
+            <span class="class">Icon</span>(icon, color: <span class="class">Colors</span>.white, size: <span class="number">28</span>),
+            <span class="keyword">const</span> <span class="class">SizedBox</span>(width: <span class="number">12</span>),
+            <span class="class">Text</span>(
+              label,
+              style: <span class="keyword">const</span> <span class="class">TextStyle</span>(
+                color: <span class="class">Colors</span>.white,
+                fontWeight: <span class="class">FontWeight</span>.bold,
+                fontSize: <span class="number">16</span>,
+              ),
+            ),
+          ] <span class="keyword">else</span> ...[
+            <span class="class">Text</span>(
+              label,
+              style: <span class="keyword">const</span> <span class="class">TextStyle</span>(
+                color: <span class="class">Colors</span>.white,
+                fontWeight: <span class="class">FontWeight</span>.bold,
+                fontSize: <span class="number">16</span>,
+              ),
+            ),
+            <span class="keyword">const</span> <span class="class">SizedBox</span>(width: <span class="number">12</span>),
+            <span class="class">Icon</span>(icon, color: <span class="class">Colors</span>.white, size: <span class="number">28</span>),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+<span class="comment">// การใช้งาน:</span>
+<span class="comment">// background: SwipeBackground(</span>
+<span class="comment">//   color: Colors.green,</span>
+<span class="comment">//   icon: Icons.archive,</span>
+<span class="comment">//   label: 'Archive',</span>
+<span class="comment">//   alignment: Alignment.centerLeft,</span>
+<span class="comment">// ),</span>
+<span class="comment">// secondaryBackground: SwipeBackground(</span>
+<span class="comment">//   color: Colors.red,</span>
+<span class="comment">//   icon: Icons.delete,</span>
+<span class="comment">//   label: 'Delete',</span>
+<span class="comment">//   alignment: Alignment.centerRight,</span>
+<span class="comment">// ),</span></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 7: Complete Example -->
+        <section class="section">
+            <h2><span class="icon">🚀</span> ตัวอย่างครบวงจร: Task Manager</h2>
+
+            <p>
+                มาดูตัวอย่างการใช้ Dismissible กับ Task Manager ที่เราสร้างใน Part 1-2 กัน:
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <div class="code-file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        lib/screens/dismissible_task_list.dart
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="code-content">
+                    <pre><span class="keyword">import</span> <span class="string">'package:flutter/material.dart'</span>;
+<span class="keyword">import</span> <span class="string">'../models/task.dart'</span>;
+
+<span class="keyword">class</span> <span class="class">DismissibleTaskList</span> <span class="keyword">extends</span> <span class="class">StatefulWidget</span> {
+  <span class="keyword">const</span> <span class="class">DismissibleTaskList</span>({<span class="keyword">super</span>.key});
+
+  <span class="annotation">@override</span>
+  <span class="class">State</span>&lt;<span class="class">DismissibleTaskList</span>&gt; <span class="function">createState</span>() =&gt; <span class="class">_DismissibleTaskListState</span>();
+}
+
+<span class="keyword">class</span> <span class="class">_DismissibleTaskListState</span> <span class="keyword">extends</span> <span class="class">State</span>&lt;<span class="class">DismissibleTaskList</span>&gt; {
+  <span class="keyword">final</span> <span class="class">List</span>&lt;<span class="class">Task</span>&gt; _tasks = [
+    <span class="class">Task</span>(id: <span class="string">'1'</span>, title: <span class="string">'เรียนรู้ ListView'</span>, description: <span class="string">'Part 1'</span>),
+    <span class="class">Task</span>(id: <span class="string">'2'</span>, title: <span class="string">'เข้าใจ Key'</span>, description: <span class="string">'Part 2'</span>),
+    <span class="class">Task</span>(id: <span class="string">'3'</span>, title: <span class="string">'ใช้ Dismissible'</span>, description: <span class="string">'Part 3'</span>),
+    <span class="class">Task</span>(id: <span class="string">'4'</span>, title: <span class="string">'Drag and Drop'</span>, description: <span class="string">'Part 4'</span>),
+  ];
+
+  <span class="comment">// เก็บ task ที่ถูกลบล่าสุด (สำหรับ Undo)</span>
+  <span class="class">Task</span>? _lastDeletedTask;
+  <span class="keyword">int</span>? _lastDeletedIndex;
+
+  <span class="keyword">void</span> <span class="function">_deleteTask</span>(<span class="keyword">int</span> index) {
+    <span class="function">setState</span>(() {
+      _lastDeletedTask = _tasks[index];
+      _lastDeletedIndex = index;
+      _tasks.<span class="function">removeAt</span>(index);
+    });
+
+    <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">clearSnackBars</span>();
+    <span class="class">ScaffoldMessenger</span>.<span class="function">of</span>(context).<span class="function">showSnackBar</span>(
+      <span class="class">SnackBar</span>(
+        content: <span class="class">Text</span>(<span class="string">'ลบ "${_lastDeletedTask!.title}" แล้ว'</span>),
+        action: <span class="class">SnackBarAction</span>(
+          label: <span class="string">'Undo'</span>,
+          onPressed: <span class="function">_undoDelete</span>,
+        ),
+        duration: <span class="keyword">const</span> <span class="class">Duration</span>(seconds: <span class="number">3</span>),
+      ),
+    );
+  }
+
+  <span class="keyword">void</span> <span class="function">_undoDelete</span>() {
+    <span class="keyword">if</span> (_lastDeletedTask != <span class="keyword">null</span> &amp;&amp; _lastDeletedIndex != <span class="keyword">null</span>) {
+      <span class="function">setState</span>(() {
+        _tasks.<span class="function">insert</span>(_lastDeletedIndex!, _lastDeletedTask!);
+        _lastDeletedTask = <span class="keyword">null</span>;
+        _lastDeletedIndex = <span class="keyword">null</span>;
+      });
+    }
+  }
+
+  <span class="keyword">void</span> <span class="function">_toggleComplete</span>(<span class="keyword">int</span> index) {
+    <span class="function">setState</span>(() {
+      _tasks[index] = _tasks[index].<span class="function">copyWith</span>(
+        isCompleted: !_tasks[index].isCompleted,
+      );
+    });
+  }
+
+  <span class="annotation">@override</span>
+  <span class="class">Widget</span> <span class="function">build</span>(<span class="class">BuildContext</span> context) {
+    <span class="keyword">return</span> <span class="class">Scaffold</span>(
+      appBar: <span class="class">AppBar</span>(
+        title: <span class="keyword">const</span> <span class="class">Text</span>(<span class="string">'Task Manager'</span>),
+        centerTitle: <span class="keyword">true</span>,
+      ),
+      body: _tasks.<span class="function">isEmpty</span>
+          ? <span class="keyword">const</span> <span class="class">Center</span>(
+              child: <span class="class">Column</span>(
+                mainAxisAlignment: <span class="class">MainAxisAlignment</span>.center,
+                children: [
+                  <span class="class">Icon</span>(<span class="class">Icons</span>.check_circle_outline, size: <span class="number">64</span>, color: <span class="class">Colors</span>.grey),
+                  <span class="class">SizedBox</span>(height: <span class="number">16</span>),
+                  <span class="class">Text</span>(<span class="string">'ไม่มีงานค้างอยู่!'</span>, style: <span class="class">TextStyle</span>(color: <span class="class">Colors</span>.grey)),
+                ],
+              ),
+            )
+          : <span class="class">ListView</span>.<span class="function">builder</span>(
+              padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">all</span>(<span class="number">16</span>),
+              itemCount: _tasks.length,
+              itemBuilder: (context, index) {
+                <span class="keyword">final</span> task = _tasks[index];
+
+                <span class="keyword">return</span> <span class="class">Padding</span>(
+                  padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(bottom: <span class="number">12</span>),
+                  child: <span class="class">Dismissible</span>(
+                    <span class="comment">// ใช้ ValueKey กับ task.id</span>
+                    key: <span class="class">ValueKey</span>(task.id),
+
+                    <span class="comment">// Swipe ขวา → เพื่อ Toggle Complete</span>
+                    background: <span class="class">Container</span>(
+                      decoration: <span class="class">BoxDecoration</span>(
+                        color: <span class="class">Colors</span>.green,
+                        borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+                      ),
+                      alignment: <span class="class">Alignment</span>.centerLeft,
+                      padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(left: <span class="number">20</span>),
+                      child: <span class="class">Icon</span>(
+                        task.isCompleted ? <span class="class">Icons</span>.replay : <span class="class">Icons</span>.check,
+                        color: <span class="class">Colors</span>.white,
+                        size: <span class="number">28</span>,
+                      ),
+                    ),
+
+                    <span class="comment">// Swipe ซ้าย ← เพื่อลบ</span>
+                    secondaryBackground: <span class="class">Container</span>(
+                      decoration: <span class="class">BoxDecoration</span>(
+                        color: <span class="class">Colors</span>.red,
+                        borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+                      ),
+                      alignment: <span class="class">Alignment</span>.centerRight,
+                      padding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">only</span>(right: <span class="number">20</span>),
+                      child: <span class="keyword">const</span> <span class="class">Icon</span>(
+                        <span class="class">Icons</span>.delete,
+                        color: <span class="class">Colors</span>.white,
+                        size: <span class="number">28</span>,
+                      ),
+                    ),
+
+                    <span class="comment">// ยืนยันก่อน dismiss</span>
+                    confirmDismiss: (direction) <span class="keyword">async</span> {
+                      <span class="keyword">if</span> (direction == <span class="class">DismissDirection</span>.startToEnd) {
+                        <span class="comment">// Toggle Complete - ไม่ต้อง dismiss จริง</span>
+                        <span class="function">_toggleComplete</span>(index);
+                        <span class="keyword">return</span> <span class="keyword">false</span>; <span class="comment">// return false เพื่อไม่ให้ item หายไป</span>
+                      }
+                      <span class="comment">// Delete - ให้ dismiss</span>
+                      <span class="keyword">return</span> <span class="keyword">true</span>;
+                    },
+
+                    onDismissed: (direction) {
+                      <span class="comment">// จะถูกเรียกเฉพาะเมื่อ confirmDismiss return true</span>
+                      <span class="function">_deleteTask</span>(index);
+                    },
+
+                    child: <span class="class">Card</span>(
+                      elevation: <span class="number">2</span>,
+                      shape: <span class="class">RoundedRectangleBorder</span>(
+                        borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">12</span>),
+                      ),
+                      child: <span class="class">ListTile</span>(
+                        contentPadding: <span class="keyword">const</span> <span class="class">EdgeInsets</span>.<span class="function">symmetric</span>(
+                          horizontal: <span class="number">16</span>,
+                          vertical: <span class="number">8</span>,
+                        ),
+                        leading: <span class="class">Checkbox</span>(
+                          value: task.isCompleted,
+                          onChanged: (_) =&gt; <span class="function">_toggleComplete</span>(index),
+                          shape: <span class="class">RoundedRectangleBorder</span>(
+                            borderRadius: <span class="class">BorderRadius</span>.<span class="function">circular</span>(<span class="number">4</span>),
+                          ),
+                        ),
+                        title: <span class="class">Text</span>(
+                          task.title,
+                          style: <span class="class">TextStyle</span>(
+                            decoration: task.isCompleted
+                                ? <span class="class">TextDecoration</span>.lineThrough
+                                : <span class="keyword">null</span>,
+                            color: task.isCompleted ? <span class="class">Colors</span>.grey : <span class="keyword">null</span>,
+                          ),
+                        ),
+                        subtitle: <span class="class">Text</span>(
+                          task.description,
+                          style: <span class="class">TextStyle</span>(
+                            color: task.isCompleted
+                                ? <span class="class">Colors</span>.grey.shade400
+                                : <span class="class">Colors</span>.grey.shade600,
+                          ),
+                        ),
+                        trailing: <span class="keyword">const</span> <span class="class">Icon</span>(<span class="class">Icons</span>.drag_handle),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 8: Common Mistakes -->
+        <section class="section">
+            <h2><span class="icon">⚠️</span> ข้อผิดพลาดที่พบบ่อย</h2>
+
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>ลืมใส่ Key</h4>
+                        <p>Dismissible ต้องมี Key เสมอ ไม่งั้น Flutter จะติดตาม Widget ไม่ถูกต้อง และอาจลบ Widget ผิดตัว</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>ไม่ลบข้อมูลใน onDismissed</h4>
+                        <p>เมื่อ onDismissed ถูกเรียก Widget ถูกลบออกจาก tree แล้ว ต้อง sync ข้อมูลใน list ทันที</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>ใช้ index เป็น Key</h4>
+                        <p>อย่าใช้ <code>Key('$index')</code> เพราะ index จะเปลี่ยนเมื่อลบ item ให้ใช้ unique ID แทน</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>ลืม handle confirmDismiss กรณี return false</h4>
+                        <p>ถ้า confirmDismiss return false, Widget จะกลับมาตำแหน่งเดิม แต่ถ้า UI ไม่ update อาจดู แปลกตา</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box danger">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    อย่าทำ!
+                </div>
+                <div class="info-content">
+<pre style="margin: 0.5rem 0; color: var(--text-secondary);">
+// ❌ ผิด - ใช้ index เป็น Key
+Dismissible(
+  key: ValueKey(index),  // index จะเปลี่ยนเมื่อลบ item!
+  ...
+)
+
+// ✅ ถูก - ใช้ unique ID
+Dismissible(
+  key: ValueKey(task.id),  // ID ไม่เปลี่ยน
+  ...
+)
+</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Summary -->
+        <section class="section">
+            <h2><span class="icon">📝</span> สรุป</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>หัวข้อ</th>
+                        <th>รายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Dismissible คืออะไร</strong></td>
+                        <td>Widget สำหรับ swipe เพื่อลบหรือดำเนินการกับรายการ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key</strong></td>
+                        <td>จำเป็นต้องมี! ใช้ ValueKey กับ unique ID</td>
+                    </tr>
+                    <tr>
+                        <td><strong>background</strong></td>
+                        <td>แสดงเมื่อ swipe จากซ้ายไปขวา (startToEnd)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>secondaryBackground</strong></td>
+                        <td>แสดงเมื่อ swipe จากขวาไปซ้าย (endToStart)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>confirmDismiss</strong></td>
+                        <td>ถามยืนยันก่อน dismiss (return true/false)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>onDismissed</strong></td>
+                        <td>Callback หลัง dismiss สำเร็จ - ใช้ลบข้อมูลจาก list</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <div class="info-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Next Step
+                </div>
+                <div class="info-content">
+                    ใน Part 4 เราจะเรียนรู้ <strong>ReorderableListView</strong> สำหรับการ Drag and Drop 
+                    เพื่อให้ผู้ใช้สามารถจัดลำดับรายการได้ตามต้องการ!
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation Footer -->
+        <footer class="nav-footer">
+            <a href="part2-understanding-key.html" class="nav-btn prev">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Part 2: Key
+            </a>
+            <a href="part4-reorderable-listview.html" class="nav-btn next">
+                Part 4: ReorderableListView
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </a>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#f97316',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#f97316',
+                lineColor: '#64748b',
+                secondaryColor: '#1a1a24',
+                tertiaryColor: '#0a0a0f',
+                background: '#1a1a24',
+                mainBkg: '#1a1a24',
+                nodeBorder: '#f97316',
+                clusterBkg: '#12121a',
+                clusterBorder: '#2a2a3a',
+                titleColor: '#fff',
+                edgeLabelBackground: '#1a1a24'
+            }
+        });
+
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('pre').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    `;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
